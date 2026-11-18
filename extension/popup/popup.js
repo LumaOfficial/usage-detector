@@ -97,7 +97,7 @@ function pill(record) {
 }
 
 function planLine(record) {
-  if (!record) return 'Not connected';
+  if (!record) return 'No data yet';
   if (record.status === 'signed-out') return 'Signed out';
   return record.plan ? `${record.plan} plan` : 'Plan unknown';
 }
@@ -309,7 +309,9 @@ document.addEventListener('click', (event) => {
   const opener = target.closest('[data-open]');
   if (opener) {
     const provider = PROVIDERS.find((item) => item.id === opener.dataset.open);
-    if (provider && isExtension) chrome.tabs.create({ url: provider.host });
+    if (!provider) return;
+    if (isExtension) chrome.tabs.create({ url: provider.host });
+    else window.open(provider.host, '_blank', 'noopener');
     return;
   }
 

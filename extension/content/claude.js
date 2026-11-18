@@ -18,7 +18,7 @@
 
     const usage = await NS.fetchJson(`/api/organizations/${org.uuid}/usage`);
     const windows = NS.extractWindows(usage);
-    const plan = NS.findValue(usage, ['plan_type', 'plan', 'tier']);
+    const plan = NS.findValue(usage, ['plan_type', 'plan', 'tier']) ?? NS.findValue(org, ['plan_type', 'plan', 'tier']);
 
     return {
       windows,

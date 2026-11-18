@@ -18,12 +18,14 @@
   const fetchUsage = async () => {
     const notes = [];
     let plan = null;
+    let denied = false;
+    let signedOut = false;
 
     try {
       const account = await NS.fetchJson('/backend-api/accounts/check/v4-2023-04-27');
       plan = planFrom(account);
     } catch (error) {
-      if (error && (error.code === 401 || error.code === 403)) throw error;
+      if (error && (error.code === 401 || error.code === 403)) denied = true;
     }
 
     const windows = [];
@@ -45,16 +47,25 @@
         notes.push(`Your plan allows ${cap} messages per window.`);
       }
     } catch (error) {
-      if (error && (error.code === 401 || error.code === 403)) throw error;
+      if (error && (error.code === 401 || error.code === 403)) denied = true;
     }
 
-    if (!plan) {
+    if (!plan || denied) {
       try {
         const me = await NS.fetchJson('/backend-api/me');
-        plan = planFrom(me);
-      } catch (_) {
-        /* plan stays unknown */
+        plan = planFrom(me) || plan;
+        denied = false;
+      } catch (error) {
+        /* A 403 here usually means the route wants a bearer token, not that you
+           are signed out — only a 401 is proof of that. */
+        if (error && error.code === 401) signedOut = true;
       }
+    }
+
+    if (signedOut && !windows.length && !plan) {
+      const error = new Error('signed-out');
+      error.code = 401;
+      throw error;
     }
 
     return { windows, plan, notes };

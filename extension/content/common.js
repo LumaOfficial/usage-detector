@@ -121,8 +121,18 @@
     month: 'Monthly',
   };
 
-  const RATIO_KEYS = new Set(['utilization', 'used_ratio', 'ratio', 'usage_ratio', 'fraction']);
-  const PERCENT_KEYS = new Set(['used_percent', 'usedpercent', 'percent', 'percentage', 'usage_percent', 'usagepercent', 'pct']);
+  /* claude.ai sends `utilization` as a percentage (0-100); ratio keys are 0-1. */
+  const RATIO_KEYS = new Set(['used_ratio', 'usedratio', 'ratio', 'usage_ratio', 'fraction']);
+  const PERCENT_KEYS = new Set([
+    'utilization',
+    'used_percent',
+    'usedpercent',
+    'percent',
+    'percentage',
+    'usage_percent',
+    'usagepercent',
+    'pct',
+  ]);
 
   const readWindow = (id, label, source) => {
     let used = null;
@@ -131,7 +141,8 @@
       if (value == null) continue;
       const lower = key.toLowerCase();
       if (RATIO_KEYS.has(lower)) {
-        used = value * 100;
+        // a few payloads send the percentage under a ratio-ish key
+        used = value <= 1 ? value * 100 : value;
         break;
       }
       if (PERCENT_KEYS.has(lower)) {
@@ -145,9 +156,11 @@
       if (usedCount != null && limit) used = (usedCount / limit) * 100;
     }
 
-    const resetsAt = NS.toEpoch(
-      source.resets_at ?? source.resetsAt ?? source.reset_at ?? source.resetAt ?? source.reset ?? source.window_reset_at
-    );
+    const resetsIn = NS.number(source.reset_after_seconds ?? source.resets_in_seconds ?? source.reset_after);
+    const resetsAt =
+      NS.toEpoch(
+        source.resets_at ?? source.resetsAt ?? source.reset_at ?? source.resetAt ?? source.reset ?? source.window_reset_at
+      ) ?? (resetsIn != null && resetsIn > 0 ? Date.now() + resetsIn * 1000 : null);
     if (used == null && resetsAt == null) return null;
 
     const usedPercent = used == null ? null : NS.round1(NS.clamp(used, 0, 100));
@@ -307,9 +320,19 @@
     if (NS.started[provider]) return;
     NS.started[provider] = true;
 
-    const safeRun = () => Promise.resolve().then(run).catch(() => {});
     const DEFAULT_MINUTES = 5;
+    const MIN_GAP_MS = 10000;
     let timer = null;
+    let lastRun = 0;
+
+    /* The timer, a tab focus and the popup's refresh can all fire at once;
+       keep them from hammering the site's own API. */
+    const safeRun = () => {
+      const now = Date.now();
+      if (now - lastRun < MIN_GAP_MS) return Promise.resolve();
+      lastRun = now;
+      return Promise.resolve().then(run).catch(() => {});
+    };
 
     /* The refresh interval comes from the settings page. */
     const schedule = (minutes) => {
