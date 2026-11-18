@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Usage Detector — Claude &amp; ChatGPT</title>
+<link rel="stylesheet" href="/preview/preview.css">
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <span class="logo" aria-hidden="true"><i></i><i></i></span>
+    <div class="top-text">
+      <h1>Usage Detector</h1>
+      <p>Claude &amp; ChatGPT usage limits at a glance — one small browser extension.</p>
+    </div>
+    <span class="tag">Manifest V3</span>
+  </header>
+
+  <div class="grid">
+    <section class="stage" aria-label="Extension popup preview">
+      <div class="stage-top">
+        <span class="stage-puzzle" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+            <path d="M10 4a2 2 0 1 1 4 0v1h3a1 1 0 0 1 1 1v3h1a2 2 0 1 1 0 4h-1v3a1 1 0 0 1-1 1h-3v-1a2 2 0 1 0-4 0v1H7a1 1 0 0 1-1-1v-3H5a2 2 0 1 1 0-4h1V6a1 1 0 0 1 1-1h3V4Z"></path>
+          </svg>
+        </span>
+        <span class="stage-name">Usage Detector</span>
+        <span class="stage-live"><i aria-hidden="true"></i>Live</span>
+      </div>
+
+      <div class="frame">
+        <iframe id="popup" src="/extension/popup/popup.html" title="Extension popup, running live with sample data"></iframe>
+      </div>
+
+      <div class="states" role="group" aria-label="Sample states">
+        <button type="button" data-state="normal" class="is-active">Normal</button>
+        <button type="button" data-state="near">Running low</button>
+        <button type="button" data-state="limit">Limit reached</button>
+        <button type="button" data-state="empty">No data</button>
+      </div>
+      <p class="hint">This is the real popup from the extension, running live with sample numbers. Pick a state to see how it reacts.</p>
+    </section>
+
+    <div class="content">
+      <section class="block">
+        <h2>What it shows</h2>
+        <ul class="checks">
+          <li><strong>Claude</strong> — your 5-hour session and weekly usage, with reset countdowns.</li>
+          <li><strong>ChatGPT</strong> — message limits for your plan and how much of the window is gone.</li>
+          <li><strong>Toolbar badge</strong> — the percentage left on your tightest limit.</li>
+          <li><strong>Warnings</strong> — the card turns amber under 15% left and red at the limit.</li>
+        </ul>
+      </section>
+
+      <section class="block">
+        <h2>Install it</h2>
+        <ol class="steps">
+          <li>
+            <span aria-hidden="true">1</span>
+            <div>Keep the <code>extension/</code> folder from this repository on your machine.</div>
+          </li>
+          <li>
+            <span aria-hidden="true">2</span>
+            <div>Open your browser's extensions page — <code>chrome://extensions</code>, <code>edge://extensions</code> or <code>opera://extensions</code> — and turn on <strong>Developer mode</strong>.</div>
+          </li>
+          <li>
+            <span aria-hidden="true">3</span>
+            <div>Choose <strong>Load unpacked</strong>, select the <code>extension/</code> folder, then pin the icon to the toolbar.</div>
+          </li>
+        </ol>
+        <p class="note">Works in Chrome, Edge, Opera, Brave, Vivaldi and Arc — any Chromium browser with Manifest V3 support.</p>
+      </section>
+
+      <section class="block">
+        <h2>How it reads usage</h2>
+        <p>A small content script runs on <code>claude.ai</code> and <code>chatgpt.com</code> while you're signed in. It asks the site for the same usage numbers its own settings screen shows, and falls back to the meters and limit banners already on the page. Everything is cached in the browser's local extension storage.</p>
+        <ul class="checks">
+          <li>No account, no API keys, no server — nothing is sent anywhere.</li>
+          <li>Reads only the two sites you are already signed in to.</li>
+          <li>Refreshes when you open the popup, when a tab becomes visible, and every five minutes.</li>
+        </ul>
+      </section>
+
+      <section class="block">
+        <h2>Inside the extension</h2>
+        <dl class="files">
+          <div><dt><code>manifest.json</code></dt><dd>Permissions, content scripts and the toolbar popup.</dd></div>
+          <div><dt><code>content/</code></dt><dd>Page-side detection for Claude and ChatGPT.</dd></div>
+          <div><dt><code>background.js</code></dt><dd>Stores each report, merges it and paints the badge.</dd></div>
+          <div><dt><code>popup/</code></dt><dd>The panel on the left — plain HTML, CSS and JS.</dd></div>
+        </dl>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script src="/preview/demo-data.js"></script>
+<script src="/preview/preview.js"></script>
+</body>
+</html>
