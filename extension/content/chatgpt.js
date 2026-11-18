@@ -104,5 +104,5 @@
     return { windows, notes, plan: null };
   };
 
-  NS.keepFresh(() => NS.detect({ provider: PROVIDER, api: fetchUsage, page: fromPage }));
+  NS.start(PROVIDER, () => NS.detect({ provider: PROVIDER, api: fetchUsage, page: fromPage }));
 })();

@@ -1,5 +1,5 @@
-/* Usage Detector popup. Runs inside the extension, and standalone in the preview
-   page, where the parent frame feeds it sample data. */
+/* Usage Detector popup. Renders whatever the content scripts last reported —
+   there is no sample data, so an empty panel means nothing has been read yet. */
 
 const PROVIDERS = [
   { id: 'claude', name: 'Claude', mark: 'C', host: 'https://claude.ai', hostName: 'claude.ai' },
@@ -13,6 +13,7 @@ const HOUR = 3600000;
 const DAY = 86400000;
 
 const state = { claude: null, chatgpt: null };
+let flashTimer = null;
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -72,6 +73,12 @@ function pill(record) {
   return el('span', 'pill pill--ok', `${rounded}% left`);
 }
 
+function planLine(record) {
+  if (!record) return 'Not connected';
+  if (record.status === 'signed-out') return 'Signed out';
+  return record.plan ? `${record.plan} plan` : 'Plan unknown';
+}
+
 function windowRow(window) {
   const row = el('div', 'win');
 
@@ -102,8 +109,8 @@ function emptyBlock(provider, record) {
   const note = record && record.notes && record.notes[0];
 
   const text = signedOut
-    ? `Sign in to ${provider.hostName} to start tracking.`
-    : note || `Open ${provider.hostName} once — the extension reads your usage from the page.`;
+    ? `Sign in to ${provider.hostName} to read your usage.`
+    : note || `Open ${provider.hostName} in a tab — the extension reads your usage from the page.`;
   wrap.append(el('p', 'empty-text', text));
 
   const button = el('button', 'btn', `Open ${provider.hostName}`);
@@ -121,7 +128,7 @@ function card(provider, record) {
 
   const who = el('div', 'who');
   who.append(el('h2', null, provider.name));
-  who.append(el('p', 'plan', record && record.plan ? `${record.plan} plan` : 'Plan not detected'));
+  who.append(el('p', 'plan', planLine(record)));
   head.append(who, pill(record));
   section.append(head);
 
@@ -134,6 +141,12 @@ function card(provider, record) {
     if (note) section.append(el('p', 'note', note));
   } else {
     section.append(emptyBlock(provider, record));
+  }
+
+  if (record && record.detectedAt) {
+    const meta = [`Checked ${ago(record.detectedAt)}`];
+    if (record.source === 'page') meta.push('read from the page');
+    section.append(el('p', 'card-foot', meta.join(' · ')));
   }
 
   return section;
@@ -155,6 +168,20 @@ function render() {
   if (line) line.textContent = subtitle();
 }
 
+function flash(message) {
+  let node = document.getElementById('flash');
+  if (!node) {
+    node = el('p', 'flash');
+    node.id = 'flash';
+    const footer = document.querySelector('.foot');
+    if (!footer) return;
+    footer.before(node);
+  }
+  node.textContent = message;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => node.remove(), 5000);
+}
+
 async function load() {
   const keys = PROVIDERS.map((provider) => `usage:${provider.id}`);
   const stored = await chrome.storage.local.get(keys);
@@ -162,20 +189,37 @@ async function load() {
   render();
 }
 
-function refresh(button) {
-  button.classList.add('is-busy');
-  if (isExtension) {
-    chrome.runtime
-      .sendMessage({ type: 'usage:refresh' })
-      .catch(() => {})
-      .then(() => setTimeout(() => {
-        button.classList.remove('is-busy');
-        load();
-      }, 1800));
+/* Opening the popup while a site tab is open should show numbers right away. */
+async function refreshIfEmpty() {
+  if (PROVIDERS.every((provider) => state[provider.id])) return;
+  try {
+    await chrome.runtime.sendMessage({ type: 'usage:refresh' });
+  } catch (_) {
     return;
   }
-  parent.postMessage({ type: 'usage:demo-request' }, '*');
-  setTimeout(() => button.classList.remove('is-busy'), 600);
+  await new Promise((resolve) => setTimeout(resolve, 1600));
+  await load();
+}
+
+async function refresh(button) {
+  if (!isExtension) {
+    flash('Install the extension to read usage from claude.ai and chatgpt.com.');
+    return;
+  }
+
+  button.classList.add('is-busy');
+  try {
+    const result = await chrome.runtime.sendMessage({ type: 'usage:refresh' });
+    if (!result || !result.ok) {
+      flash('Open claude.ai or chatgpt.com in a tab, then refresh.');
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await load();
+    }
+  } catch (_) {
+    flash('Could not reach the extension. Reload it from the extensions page.');
+  }
+  button.classList.remove('is-busy');
 }
 
 document.addEventListener('click', (event) => {
@@ -194,22 +238,14 @@ document.addEventListener('click', (event) => {
 });
 
 if (isExtension) {
-  load();
+  load().then(refreshIfEmpty);
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (Object.keys(changes).some((key) => key.startsWith('usage:'))) load();
   });
 } else {
   document.body.classList.add('is-embedded');
-  render();
-  window.addEventListener('message', (event) => {
-    const message = event.data;
-    if (!message || message.type !== 'usage:demo') return;
-    state.claude = (message.data && message.data.claude) || null;
-    state.chatgpt = (message.data && message.data.chatgpt) || null;
-    render();
-  });
-  parent.postMessage({ type: 'usage:demo-ready' }, '*');
 }
 
+render();
 setInterval(render, 30000);

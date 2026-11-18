@@ -185,44 +185,70 @@ body {
   background: #0e1014;
 }
 
-.states {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 12px 2px 0;
-}
-
-.states button {
-  flex: 1 1 auto;
+.audit {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 1px;
   border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--muted);
-  font: inherit;
-  font-size: 11.5px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--border);
+  max-width: 66ch;
+}
+
+.audit-item {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 10px 14px;
+  background: var(--panel);
+  font-size: 13px;
+  color: #c3cad6;
+}
+
+.audit-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #3a4250;
+  transform: translateY(-1px);
+}
+
+.audit-item.is-ok .audit-dot {
+  background: #34b27b;
+  box-shadow: 0 0 0 3px rgba(52, 178, 123, 0.14);
+}
+
+.audit-item.is-bad .audit-dot {
+  background: #e2555b;
+  box-shadow: 0 0 0 3px rgba(226, 85, 91, 0.14);
+}
+
+.audit-label {
   font-weight: 600;
-  padding: 6px 9px;
-  border-radius: 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  color: var(--ink);
 }
 
-.states button:hover {
-  color: var(--ink);
-  border-color: #39424f;
-}
-
-.states button.is-active {
-  color: var(--ink);
-  border-color: #46505f;
-  background: #232a35;
+.audit-detail {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--dim);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-align: right;
 }
 
 .hint {
-  margin: 10px 2px 2px;
+  margin: 11px 4px 3px;
   font-size: 11.5px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--dim);
+}
+
+.hint code {
+  font-size: 11px;
 }
 
 /* content */

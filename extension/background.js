@@ -7,7 +7,19 @@ const PATTERNS = {
   chatgpt: ['https://chatgpt.com/*', 'https://chat.openai.com/*'],
 };
 
+const SCRIPTS = {
+  claude: ['content/common.js', 'content/claude.js'],
+  chatgpt: ['content/common.js', 'content/chatgpt.js'],
+};
+
 const keyFor = (provider) => `usage:${provider}`;
+
+function providerForUrl(url) {
+  if (!url) return null;
+  if (url.startsWith('https://claude.ai/')) return 'claude';
+  if (url.startsWith('https://chatgpt.com/') || url.startsWith('https://chat.openai.com/')) return 'chatgpt';
+  return null;
+}
 
 chrome.runtime.onMessage.addListener((message, _sender, respond) => {
   if (!message || typeof message !== 'object') return undefined;
@@ -59,8 +71,7 @@ async function saveReport(provider, payload) {
 }
 
 async function updateBadge() {
-  const keys = PROVIDERS.map(keyFor);
-  const stored = await chrome.storage.local.get(keys);
+  const stored = await chrome.storage.local.get(PROVIDERS.map(keyFor));
 
   let remaining = null;
   for (const provider of PROVIDERS) {
@@ -86,40 +97,60 @@ async function updateBadge() {
   }
 }
 
+/* Tabs that were already open when the extension was installed have no content
+   script yet, so put one there instead of asking the user to reload the site. */
+async function injectInto(tab) {
+  const provider = providerForUrl(tab && tab.url);
+  if (!provider || typeof tab.id !== 'number') return false;
+  try {
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: SCRIPTS[provider] });
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function pingTab(tab) {
+  if (typeof tab.id !== 'number') return false;
+  try {
+    await chrome.tabs.sendMessage(tab.id, { type: 'usage:refresh' });
+    return true;
+  } catch (_) {
+    if (!(await injectInto(tab))) return false;
+    try {
+      await chrome.tabs.sendMessage(tab.id, { type: 'usage:refresh' });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+}
+
+async function matchingTabs(patterns) {
+  try {
+    return await chrome.tabs.query({ url: patterns });
+  } catch (_) {
+    return [];
+  }
+}
+
 async function refreshTabs(provider) {
   const targets = provider ? [provider] : PROVIDERS;
   const patterns = targets.flatMap((name) => PATTERNS[name] || []);
 
-  let tabs = [];
-  try {
-    tabs = await chrome.tabs.query({ url: patterns });
-  } catch (_) {
-    tabs = [];
-  }
-  if (!tabs.length) {
-    try {
-      tabs = await chrome.tabs.query({});
-    } catch (_) {
-      tabs = [];
-    }
-  }
-
   let pinged = 0;
-  for (const tab of tabs) {
-    if (typeof tab.id !== 'number') continue;
-    try {
-      await chrome.tabs.sendMessage(tab.id, { type: 'usage:refresh' });
-      pinged += 1;
-    } catch (_) {
-      /* no content script in that tab */
-    }
+  for (const tab of await matchingTabs(patterns)) {
+    if (await pingTab(tab)) pinged += 1;
   }
 
   return { ok: pinged > 0, tabs: pinged };
 }
 
-chrome.runtime.onInstalled.addListener(() => {
-  updateBadge();
+chrome.runtime.onInstalled.addListener(async () => {
+  await updateBadge();
+  for (const tab of await matchingTabs(PROVIDERS.flatMap((name) => PATTERNS[name]))) {
+    await injectInto(tab);
+  }
 });
 
 chrome.runtime.onStartup.addListener(() => {

@@ -48,6 +48,11 @@ The result is stored in `chrome.storage.local` and the badge is updated. Nothing
 is sent to any third party, and the extension has no build step — the files in
 `extension/` are what the browser loads.
 
+The `scripting` permission is used for one thing: when you install or update the
+extension, tabs that already have `claude.ai` or `chatgpt.com` open get the
+content script injected, so you don't have to reload those sites before the panel
+fills in.
+
 ## Layout
 
 ```
@@ -61,11 +66,12 @@ extension/
   popup/
     popup.html/.css/.js  the toolbar panel
   icons/               toolbar icons
-preview/               standalone page that renders the real popup with sample data
+preview/               standalone page that renders the real popup and audits the files
 ```
 
-`preview/` exists only so the popup UI can be seen in a normal browser tab; it is
-not part of the extension.
+`preview/` exists only so the popup can be seen in a normal browser tab; it is not
+part of the extension. It ships no sample numbers — an empty panel there is the
+same empty panel you get before the extension has read a site.
 
 ## Limits worth knowing
 

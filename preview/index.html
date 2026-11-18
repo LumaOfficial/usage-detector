@@ -18,7 +18,7 @@
   </header>
 
   <div class="grid">
-    <section class="stage" aria-label="Extension popup preview">
+    <section class="stage" aria-label="Extension popup">
       <div class="stage-top">
         <span class="stage-puzzle" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
@@ -30,26 +30,24 @@
       </div>
 
       <div class="frame">
-        <iframe id="popup" src="/extension/popup/popup.html" title="Extension popup, running live with sample data"></iframe>
+        <iframe id="popup" src="/extension/popup/popup.html" title="The extension popup, rendered live"></iframe>
       </div>
 
-      <div class="states" role="group" aria-label="Sample states">
-        <button type="button" data-state="normal" class="is-active">Normal</button>
-        <button type="button" data-state="near">Running low</button>
-        <button type="button" data-state="limit">Limit reached</button>
-        <button type="button" data-state="empty">No data</button>
-      </div>
-      <p class="hint">This is the real popup from the extension, running live with sample numbers. Pick a state to see how it reacts.</p>
+      <p class="hint">
+        This is the real panel from <code>extension/popup/</code>, with no sample numbers in it.
+        It stays empty here because a web page can't reach <code>claude.ai</code> or
+        <code>chatgpt.com</code> — the installed extension reads them from inside your browser.
+      </p>
     </section>
 
     <div class="content">
       <section class="block">
-        <h2>What it shows</h2>
+        <h2>What it does</h2>
         <ul class="checks">
-          <li><strong>Claude</strong> — your 5-hour session and weekly usage, with reset countdowns.</li>
+          <li><strong>Claude</strong> — your 5-hour session, weekly and extra-credit usage, with reset countdowns.</li>
           <li><strong>ChatGPT</strong> — message limits for your plan and how much of the window is gone.</li>
-          <li><strong>Toolbar badge</strong> — the percentage left on your tightest limit.</li>
-          <li><strong>Warnings</strong> — the card turns amber under 15% left and red at the limit.</li>
+          <li><strong>Toolbar badge</strong> — the percentage left on your tightest limit, green to red.</li>
+          <li><strong>Zero setup</strong> — no account, no API key, no server.</li>
         </ul>
       </section>
 
@@ -73,29 +71,35 @@
       </section>
 
       <section class="block">
-        <h2>How it reads usage</h2>
-        <p>A small content script runs on <code>claude.ai</code> and <code>chatgpt.com</code> while you're signed in. It asks the site for the same usage numbers its own settings screen shows, and falls back to the meters and limit banners already on the page. Everything is cached in the browser's local extension storage.</p>
+        <h2>Extension check</h2>
+        <ul class="audit" id="audit" aria-live="polite">
+          <li class="audit-item"><span class="audit-dot" aria-hidden="true"></span><span class="audit-label">Reading the manifest…</span></li>
+        </ul>
+        <p class="note" id="audit-summary"></p>
+      </section>
+
+      <section class="block">
+        <h2>Panel is still empty?</h2>
         <ul class="checks">
-          <li>No account, no API keys, no server — nothing is sent anywhere.</li>
-          <li>Reads only the two sites you are already signed in to.</li>
-          <li>Refreshes when you open the popup, when a tab becomes visible, and every five minutes.</li>
+          <li>Open <code>claude.ai</code> or <code>chatgpt.com</code> in a tab and stay signed in — the extension reads usage from the page you're on.</li>
+          <li>Press the refresh button in the panel. It asks every open tab to report again.</li>
+          <li>Tabs that were already open when you installed the extension are handled for you; a reload of the site always works too.</li>
+          <li>If a site changes its usage screen, the panel says <em>read from the page</em> and shows whatever that page displays.</li>
         </ul>
       </section>
 
       <section class="block">
-        <h2>Inside the extension</h2>
-        <dl class="files">
-          <div><dt><code>manifest.json</code></dt><dd>Permissions, content scripts and the toolbar popup.</dd></div>
-          <div><dt><code>content/</code></dt><dd>Page-side detection for Claude and ChatGPT.</dd></div>
-          <div><dt><code>background.js</code></dt><dd>Stores each report, merges it and paints the badge.</dd></div>
-          <div><dt><code>popup/</code></dt><dd>The panel on the left — plain HTML, CSS and JS.</dd></div>
-        </dl>
+        <h2>How it reads usage</h2>
+        <p>A content script runs on <code>claude.ai</code> and <code>chatgpt.com</code> while you're signed in. It asks the site for the same usage numbers its own settings screen shows, and falls back to the meters and limit banners already on the page. Everything is cached in the browser's local extension storage.</p>
+        <ul class="checks">
+          <li>No account, no API keys, no server — nothing is sent anywhere.</li>
+          <li>Refreshes when you open the panel, when a tab becomes visible, and every five minutes.</li>
+        </ul>
       </section>
     </div>
   </div>
 </div>
 
-<script src="/preview/demo-data.js"></script>
 <script src="/preview/preview.js"></script>
 </body>
 </html>

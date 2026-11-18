@@ -116,6 +116,7 @@
     seven_day_opus: 'Weekly · Opus',
     seven_day_sonnet: 'Weekly · Sonnet',
     seven_day_oauth_apps: 'Weekly · Connected apps',
+    extra_usage: 'Extra usage credits',
     monthly: 'Monthly',
     month: 'Monthly',
   };
@@ -300,9 +301,14 @@
     });
   };
 
-  NS.keepFresh = (run) => {
+  /* Starts page detection once per provider, even when the script is injected twice. */
+  NS.start = (provider, run) => {
+    NS.started = NS.started || {};
+    if (NS.started[provider]) return;
+    NS.started[provider] = true;
+
     const safeRun = () => Promise.resolve().then(run).catch(() => {});
-    setTimeout(safeRun, 1500);
+    setTimeout(safeRun, 1200);
     setInterval(() => {
       if (document.visibilityState === 'visible') safeRun();
     }, 5 * 60 * 1000);

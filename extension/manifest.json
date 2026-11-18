@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Your Claude and ChatGPT usage limits at a glance. Reads only the sites you're signed in to — no accounts, no keys.",
   "minimum_chrome_version": "102",
-  "permissions": ["storage"],
+  "permissions": ["storage", "scripting"],
   "host_permissions": [
     "https://claude.ai/*",
     "https://chatgpt.com/*",
