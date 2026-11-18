@@ -35,12 +35,18 @@
 
       <p class="hint">
         This is the real panel from <code>extension/popup/</code>, with no sample numbers in it.
-        It stays empty here because a web page can't reach <code>claude.ai</code> or
-        <code>chatgpt.com</code> — the installed extension reads them from inside your browser.
+        It stays empty here because a web page can't see your tabs or reach <code>claude.ai</code> or
+        <code>chatgpt.com</code> — the installed extension does both from inside your browser.
       </p>
     </section>
 
     <div class="content">
+      <section class="block">
+        <h2>Why this exists</h2>
+        <p>Ask either site how much you have left and the answer is the same: usage is <em>“up to our discretion.”</em> No counter, no reset clock, no warning before the wall.</p>
+        <p>This extension measures it for you — it reads the numbers your own signed-in account already returns and the meters the page already draws, then keeps the countdown in your toolbar.</p>
+      </section>
+
       <section class="block">
         <h2>What it does</h2>
         <ul class="checks">
@@ -52,6 +58,21 @@
           <li><strong>Your call</strong> — alert threshold, refresh interval, badge focus and panel theme.</li>
           <li><strong>Zero setup</strong> — no account, no API key, no server.</li>
         </ul>
+      </section>
+
+      <section class="block">
+        <h2>Site detector</h2>
+        <p>The extension first works out whether the tab you are on is Claude or ChatGPT, then reads that tab. Paste a URL to run the same detector it ships with.</p>
+        <form class="detector" id="detector" autocomplete="off">
+          <input id="detector-url" class="detector-input" type="text" placeholder="https://claude.ai/new" aria-label="URL to check" spellcheck="false">
+          <button class="detector-btn" type="submit">Detect</button>
+        </form>
+        <div class="detector-chips">
+          <button type="button" class="detector-chip" data-url="https://claude.ai/new">claude.ai</button>
+          <button type="button" class="detector-chip" data-url="https://chatgpt.com/">chatgpt.com</button>
+          <button type="button" class="detector-chip" data-url="https://example.com/">example.com</button>
+        </div>
+        <p class="detector-out" id="detector-out" aria-live="polite">Reading this page's address…</p>
       </section>
 
       <section class="block">
@@ -111,6 +132,7 @@
   </div>
 </div>
 
+<script src="/extension/sites.js"></script>
 <script src="/preview/preview.js"></script>
 </body>
 </html>

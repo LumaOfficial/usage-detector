@@ -31,7 +31,15 @@
   </div>
 </header>
 
+<section id="detect" class="detect" aria-live="polite">
+  <span class="detect-dot" aria-hidden="true"></span>
+  <span id="detect-text" class="detect-text">Checking this tab…</span>
+  <button id="detect-action" class="detect-action" type="button" hidden>Read tab</button>
+</section>
+
 <main id="providers" class="providers" aria-live="polite"></main>
+
+<p class="why">Claude and ChatGPT both call your remaining usage “up to our discretion”. This panel counts what they actually give you.</p>
 
 <footer class="foot">
   <button class="link" type="button" data-open="claude">Open claude.ai</button>
@@ -39,6 +47,7 @@
   <button class="link" type="button" data-open="chatgpt">Open chatgpt.com</button>
 </footer>
 
+<script src="../sites.js"></script>
 <script src="../settings.js"></script>
 <script src="popup.js"></script>
 </body>

@@ -316,6 +316,11 @@
 
   /* Starts page detection once per provider, even when the script is injected twice. */
   NS.start = (provider, run) => {
+    // The detector decides whether this tab really is the site this script is for.
+    const sites = globalThis.UsageDetectorSites;
+    const site = sites ? sites.detect(location.href) : null;
+    if (!site || site.id !== provider) return;
+
     NS.started = NS.started || {};
     if (NS.started[provider]) return;
     NS.started[provider] = true;

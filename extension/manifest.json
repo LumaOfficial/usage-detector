@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Usage Detector — Claude & ChatGPT",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Your Claude and ChatGPT usage limits at a glance. Reads only the sites you're signed in to — no accounts, no keys.",
   "minimum_chrome_version": "102",
   "permissions": ["storage", "scripting", "notifications"],
@@ -36,12 +36,12 @@
   "content_scripts": [
     {
       "matches": ["https://claude.ai/*"],
-      "js": ["content/common.js", "content/claude.js"],
+      "js": ["sites.js", "content/common.js", "content/claude.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
-      "js": ["content/common.js", "content/chatgpt.js"],
+      "js": ["sites.js", "content/common.js", "content/chatgpt.js"],
       "run_at": "document_idle"
     }
   ]

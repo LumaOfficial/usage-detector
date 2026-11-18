@@ -57,6 +57,48 @@
     }
   };
 
+  // Site detector: the same module the extension ships, run on any URL.
+  const detector = document.getElementById('detector');
+  const detectorUrl = document.getElementById('detector-url');
+  const detectorOut = document.getElementById('detector-out');
+  const sites = globalThis.UsageDetectorSites;
+
+  const describe = (url) => {
+    const site = sites ? sites.detect(url) : null;
+    return site
+      ? { on: true, text: `Detected ${site.name} on ${site.hostname} — the panel reads that tab.` }
+      : { on: false, text: 'Not Claude or ChatGPT — the detector leaves the panel alone.' };
+  };
+
+  const runDetector = (url) => {
+    if (!detectorOut) return;
+    const result = describe(url);
+    detectorOut.textContent = result.text;
+    detectorOut.classList.toggle('is-on', result.on);
+  };
+
+  if (detectorOut) {
+    const here = describe(location.href);
+    detectorOut.textContent = here.on
+      ? here.text
+      : `This page (${location.hostname}) is not Claude or ChatGPT — the detector stays off.`;
+  }
+
+  if (detector) {
+    detector.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const url = detectorUrl.value.trim();
+      if (url) runDetector(url);
+    });
+
+    for (const chip of document.querySelectorAll('.detector-chip[data-url]')) {
+      chip.addEventListener('click', () => {
+        detectorUrl.value = chip.dataset.url;
+        runDetector(chip.dataset.url);
+      });
+    }
+  }
+
   const run = async () => {
     list.textContent = '';
 
@@ -93,6 +135,7 @@
           .map((entry) => entry.matches.map((match) => match.replace('https://', '').replace('/*', '')).join(' + '))
           .join(' | ')
       ),
+      item(await exists('/extension/sites.js'), 'Site detector', 'sites.js'),
       item(
         icons.length > 0 &&
           (await Promise.all(icons.map((size) => exists(`/extension/${manifest.icons[size]}`)))).every(Boolean),

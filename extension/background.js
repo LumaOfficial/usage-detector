@@ -1,20 +1,17 @@
 /* Usage Detector — stores what the content scripts report, keeps a short
    history, warns when a limit runs low, and paints the badge. */
 
-importScripts('settings.js');
+importScripts('settings.js', 'sites.js');
 
-const PROVIDERS = ['claude', 'chatgpt'];
-const NAMES = { claude: 'Claude', chatgpt: 'ChatGPT' };
+const Sites = globalThis.UsageDetectorSites;
+const PROVIDERS = Sites.IDS;
+const NAMES = Object.fromEntries(Sites.SITES.map((site) => [site.id, site.name]));
 
-const PATTERNS = {
-  claude: ['https://claude.ai/*'],
-  chatgpt: ['https://chatgpt.com/*', 'https://chat.openai.com/*'],
-};
+const PATTERNS = Sites.patterns;
 
-const SCRIPTS = {
-  claude: ['content/common.js', 'content/claude.js'],
-  chatgpt: ['content/common.js', 'content/chatgpt.js'],
-};
+const SCRIPTS = Object.fromEntries(
+  PROVIDERS.map((provider) => [provider, ['sites.js', 'content/common.js', `content/${provider}.js`]])
+);
 
 const HISTORY_MS = 7 * 24 * 60 * 60 * 1000;
 const HISTORY_MAX = 480;
@@ -24,10 +21,8 @@ const historyKey = (provider) => `history:${provider}`;
 const alertKey = (provider) => `alert:${provider}`;
 
 function providerForUrl(url) {
-  if (!url) return null;
-  if (url.startsWith('https://claude.ai/')) return 'claude';
-  if (url.startsWith('https://chatgpt.com/') || url.startsWith('https://chat.openai.com/')) return 'chatgpt';
-  return null;
+  const site = Sites.detect(url);
+  return site ? site.id : null;
 }
 
 function worstUsed(record) {
@@ -217,6 +212,29 @@ async function refreshTabs(provider) {
 
   return { ok: pinged > 0, tabs: pinged };
 }
+
+/* The toolbar tooltip names the site the detector sees in the active tab. */
+async function labelAction(tab) {
+  if (!tab || typeof tab.id !== 'number') return;
+  const site = Sites.detect(tab.url);
+  try {
+    await chrome.action.setTitle({ tabId: tab.id, title: site ? `Usage Detector — ${site.name}` : 'Usage Detector' });
+  } catch (_) {
+    /* the tab closed before the title landed */
+  }
+}
+
+chrome.tabs.onActivated.addListener(async ({ tabId }) => {
+  try {
+    await labelAction(await chrome.tabs.get(tabId));
+  } catch (_) {
+    /* tab is gone */
+  }
+});
+
+chrome.tabs.onUpdated.addListener((_tabId, info, tab) => {
+  if (info.url || info.status === 'complete') labelAction(tab);
+});
 
 chrome.runtime.onInstalled.addListener(async () => {
   await updateBadge();

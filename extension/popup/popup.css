@@ -249,6 +249,76 @@ h1 {
   }
 }
 
+/* site detector strip */
+.detect {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 12px 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+}
+
+.detect-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--dim);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.detect.is-on .detect-dot {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px rgba(47, 212, 165, 0.18), 0 0 10px rgba(47, 212, 165, 0.8);
+}
+
+.detect-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detect.is-on .detect-text {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.detect-action {
+  flex: none;
+  border: 1px solid rgba(140, 122, 255, 0.4);
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.26), rgba(47, 212, 165, 0.18));
+  color: var(--ink);
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 660;
+  padding: 3px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: filter 0.16s ease, opacity 0.16s ease;
+}
+
+.detect-action:hover {
+  filter: brightness(1.15);
+}
+
+.detect-action:focus-visible {
+  outline: 2px solid rgba(124, 92, 255, 0.9);
+  outline-offset: 2px;
+}
+
+.detect-action.is-busy {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 /* cards */
 .providers {
   padding: 12px 12px 13px;
@@ -288,6 +358,15 @@ h1 {
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--brand), transparent);
   opacity: 0.7;
+}
+
+/* the site the detector found in the tab behind the panel */
+.card.is-current {
+  box-shadow: 0 0 0 1px var(--brand), 0 20px 36px -28px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.card.is-current::before {
+  opacity: 1;
 }
 
 .card-head {
@@ -537,6 +616,16 @@ h1 {
 .btn:focus-visible {
   outline: 2px solid rgba(124, 92, 255, 0.9);
   outline-offset: 2px;
+}
+
+/* why the panel exists */
+.why {
+  margin: 0;
+  padding: 0 14px 4px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--dim);
+  text-align: center;
 }
 
 /* footer */

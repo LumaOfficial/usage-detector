@@ -7,8 +7,18 @@ Works in every Chromium browser — Chrome, Edge, Opera, Brave, Vivaldi, Arc.
 
 ![states](extension/icons/icon-128.png)
 
+## Why it exists
+
+Ask either site how much you have left and the answer is the same: usage is
+*"up to our discretion."* There is no counter, no reset clock and no warning
+before the wall. This extension measures it for you — it reads the numbers your
+own signed-in account already returns and the meters the page already draws, and
+keeps the countdown in your toolbar.
+
 ## What it does
 
+- Detects whether the tab you are on is Claude or ChatGPT, names it in the panel
+  and reads that tab on demand.
 - Reads the usage windows each site exposes for your plan — Claude's 5-hour
   session and weekly limits, ChatGPT's message caps — plus the reset countdown.
 - Falls back to the meters and limit banners already visible on the page when an
@@ -44,11 +54,13 @@ every five minutes.
 A content script runs on `claude.ai` and `chatgpt.com` in the extension's isolated
 world. On each page it:
 
-1. asks the site's own account endpoints (`/api/organizations/…/usage` on Claude,
+1. asks the site detector (`extension/sites.js`) whether this tab really is the
+   site the script is for, and stops if it isn't;
+2. asks the site's own account endpoints (`/api/organizations/…/usage` on Claude,
    `/backend-api/conversation_limit` and the account check on ChatGPT) with the
    cookies the page already has;
-2. parses whatever usage windows the response contains;
-3. if that fails, reads the percentages, accessible progress bars and limit
+3. parses whatever usage windows the response contains;
+4. if that fails, reads the percentages, accessible progress bars and limit
    banners rendered on the page instead.
 
 The result is stored in `chrome.storage.local` and the badge is updated. Nothing
@@ -65,6 +77,7 @@ fills in.
 ```
 extension/
   manifest.json        MV3 manifest: permissions, content scripts, popup, options
+  sites.js             site detector: which tab is Claude or ChatGPT
   settings.js          alert threshold, refresh interval, badge focus, theme
   background.js        stores reports and history, alerts, paints the badge
   content/

@@ -1,10 +1,15 @@
 /* Usage Detector popup. Renders whatever the content scripts last reported —
    there is no sample data, so an empty panel means nothing has been read yet. */
 
-const PROVIDERS = [
-  { id: 'claude', name: 'Claude', mark: 'C', host: 'https://claude.ai', hostName: 'claude.ai' },
-  { id: 'chatgpt', name: 'ChatGPT', mark: 'G', host: 'https://chatgpt.com', hostName: 'chatgpt.com' },
-];
+const Sites = globalThis.UsageDetectorSites;
+const MARKS = { claude: 'C', chatgpt: 'G' };
+const PROVIDERS = Sites.SITES.map((site) => ({
+  id: site.id,
+  name: site.name,
+  mark: MARKS[site.id] || site.name.slice(0, 1),
+  host: site.host,
+  hostName: site.hostName,
+}));
 
 const isExtension = typeof chrome !== 'undefined' && Boolean(chrome.runtime && chrome.runtime.id);
 
@@ -13,7 +18,8 @@ const HOUR = 3600000;
 const DAY = 86400000;
 const HISTORY_DAYS = 7;
 
-const state = { claude: null, chatgpt: null, history: { claude: [], chatgpt: [] } };
+const state = { claude: null, chatgpt: null, history: { claude: [], chatgpt: [] }, active: null };
+let tabChecked = false;
 
 const settingsStore = globalThis.UsageDetectorSettings;
 let settings = (settingsStore && settingsStore.DEFAULTS) || {
@@ -71,6 +77,46 @@ function applyTheme(theme) {
         : 'dark'
       : theme;
   document.documentElement.dataset.theme = resolved;
+}
+
+/* Which supported site the tab behind the popup is on, if any. */
+async function detectActiveTab() {
+  state.active = null;
+  tabChecked = true;
+  if (!isExtension || !chrome.tabs) return;
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    state.active = tab && tab.url ? Sites.detect(tab.url) : null;
+  } catch (_) {
+    state.active = null;
+  }
+}
+
+function renderDetect() {
+  const strip = document.getElementById('detect');
+  const text = document.getElementById('detect-text');
+  const action = document.getElementById('detect-action');
+  if (!strip || !text || !action) return;
+
+  if (!tabChecked) {
+    strip.classList.remove('is-on');
+    action.hidden = true;
+    text.textContent = 'Checking this tab…';
+    return;
+  }
+
+  const active = state.active;
+  strip.classList.toggle('is-on', Boolean(active));
+  action.hidden = !active || !isExtension;
+
+  if (!isExtension) {
+    text.textContent = 'Site detector runs in the browser';
+    return;
+  }
+
+  text.textContent = active ? `On ${active.hostname}` : 'Not on Claude or ChatGPT';
+  if (active) action.dataset.refreshSite = active.id;
+  else delete action.dataset.refreshSite;
 }
 
 function worstRemaining(record) {
@@ -170,21 +216,27 @@ function emptyBlock(provider, record) {
   const wrap = el('div', 'empty');
   const signedOut = record && record.status === 'signed-out';
   const note = record && record.notes && record.notes[0];
+  const here = Boolean(state.active && state.active.id === provider.id);
 
-  const text = signedOut
-    ? `Sign in to ${provider.hostName} to read your usage.`
-    : note || `Open ${provider.hostName} in a tab — the extension reads your usage from the page.`;
+  let text;
+  if (signedOut) text = `Sign in to ${provider.hostName} to read your usage.`;
+  else if (note) text = note;
+  else if (here) text = `You're on ${provider.hostName} — the panel fills in as soon as the page reports.`;
+  else text = `Open ${provider.hostName} in a tab — the extension reads your usage from the page.`;
   wrap.append(el('p', 'empty-text', text));
 
-  const button = el('button', 'btn', `Open ${provider.hostName}`);
+  const button = el('button', 'btn', here ? 'Read this tab' : `Open ${provider.hostName}`);
   button.type = 'button';
-  button.dataset.open = provider.id;
+  if (here) button.dataset.refreshSite = provider.id;
+  else button.dataset.open = provider.id;
   wrap.append(button);
   return wrap;
 }
 
 function card(provider, record) {
   const section = el('section', `card card--${provider.id}`);
+  const here = Boolean(state.active && state.active.id === provider.id);
+  if (here) section.classList.add('is-current');
 
   const head = el('div', 'card-head');
   head.append(el('span', 'mark', provider.mark));
@@ -212,6 +264,7 @@ function card(provider, record) {
   if (record && record.detectedAt) {
     const meta = [`Checked ${ago(record.detectedAt)}`];
     if (record.source === 'page') meta.push('read from the page');
+    if (here) meta.push('this tab');
     section.append(el('p', 'card-foot', meta.join(' · ')));
   }
 
@@ -225,6 +278,8 @@ function subtitle() {
 }
 
 function render() {
+  renderDetect();
+
   const root = document.getElementById('providers');
   if (!root) return;
   root.textContent = '';
@@ -251,6 +306,7 @@ function flash(message) {
 async function load() {
   settings = settingsStore ? await settingsStore.get() : settings;
   applyTheme(settings.theme);
+  await detectActiveTab();
 
   if (!isExtension) {
     render();
@@ -271,9 +327,11 @@ async function load() {
 
 /* Opening the popup while a site tab is open should show numbers right away. */
 async function refreshIfEmpty() {
+  const target = state.active ? state.active.id : null;
+  if (target && state[target]) return;
   if (PROVIDERS.every((provider) => state[provider.id])) return;
   try {
-    await chrome.runtime.sendMessage({ type: 'usage:refresh' });
+    await chrome.runtime.sendMessage({ type: 'usage:refresh', provider: target || undefined });
   } catch (_) {
     return;
   }
@@ -281,7 +339,7 @@ async function refreshIfEmpty() {
   await load();
 }
 
-async function refresh(button) {
+async function refresh(button, provider) {
   if (!isExtension) {
     flash('Install the extension to read usage from claude.ai and chatgpt.com.');
     return;
@@ -289,7 +347,7 @@ async function refresh(button) {
 
   button.classList.add('is-busy');
   try {
-    const result = await chrome.runtime.sendMessage({ type: 'usage:refresh' });
+    const result = await chrome.runtime.sendMessage({ type: 'usage:refresh', provider });
     if (!result || !result.ok) {
       flash('Open claude.ai or chatgpt.com in a tab, then refresh.');
     } else {
@@ -312,6 +370,12 @@ document.addEventListener('click', (event) => {
     if (!provider) return;
     if (isExtension) chrome.tabs.create({ url: provider.host });
     else window.open(provider.host, '_blank', 'noopener');
+    return;
+  }
+
+  const siteButton = target.closest('[data-refresh-site]');
+  if (siteButton) {
+    refresh(siteButton, siteButton.dataset.refreshSite);
     return;
   }
 
