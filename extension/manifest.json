@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Usage Detector — Claude & ChatGPT",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Your Claude and ChatGPT usage limits at a glance. Reads only the sites you're signed in to — no accounts, no keys.",
   "minimum_chrome_version": "102",
-  "permissions": ["storage", "scripting"],
+  "permissions": ["storage", "scripting", "notifications"],
   "host_permissions": [
     "https://claude.ai/*",
     "https://chatgpt.com/*",
@@ -12,6 +12,10 @@
   ],
   "background": {
     "service_worker": "background.js"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
   },
   "action": {
     "default_title": "Usage Detector",

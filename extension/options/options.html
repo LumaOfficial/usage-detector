@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Usage Detector — Settings</title>
+<link rel="stylesheet" href="options.css">
+</head>
+<body>
+<main class="panel">
+  <header class="head">
+    <span class="logo" aria-hidden="true"><i></i><i></i></span>
+    <div class="head-text">
+      <h1>Settings</h1>
+      <p>Usage Detector — Claude &amp; ChatGPT</p>
+    </div>
+    <span class="saved" id="saved" aria-live="polite"></span>
+  </header>
+
+  <p class="banner" id="banner" hidden></p>
+
+  <form class="rows" id="settings" autocomplete="off">
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="alertThreshold">Low-usage alerts</label>
+        <span class="row-hint">Send a desktop notification when a limit drops below this much left.</span>
+      </div>
+      <div class="control">
+        <input id="alertThreshold" name="alertThreshold" type="range" min="1" max="50" step="1">
+        <output id="alertThresholdValue" for="alertThreshold">15% left</output>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="refreshMinutes">Refresh interval</label>
+        <span class="row-hint">How often an open Claude or ChatGPT tab reports again.</span>
+      </div>
+      <div class="control">
+        <select id="refreshMinutes" name="refreshMinutes">
+          <option value="1">Every minute</option>
+          <option value="2">Every 2 minutes</option>
+          <option value="5">Every 5 minutes</option>
+          <option value="10">Every 10 minutes</option>
+          <option value="15">Every 15 minutes</option>
+          <option value="30">Every 30 minutes</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="badgeMode">Toolbar badge</label>
+        <span class="row-hint">Which limit the percentage on the toolbar icon follows.</span>
+      </div>
+      <div class="control">
+        <select id="badgeMode" name="badgeMode">
+          <option value="worst">Tightest limit</option>
+          <option value="claude">Claude only</option>
+          <option value="chatgpt">ChatGPT only</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="theme">Panel theme</label>
+        <span class="row-hint">How the popup and this page look.</span>
+      </div>
+      <div class="control">
+        <select id="theme" name="theme">
+          <option value="auto">Match system</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+    </div>
+  </form>
+
+  <p class="foot">Settings are stored in your browser. The extension sends nothing anywhere.</p>
+</main>
+
+<script src="../settings.js"></script>
+<script src="options.js"></script>
+</body>
+</html>

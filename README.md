@@ -15,7 +15,14 @@ Works in every Chromium browser — Chrome, Edge, Opera, Brave, Vivaldi, Arc.
   account API doesn't answer.
 - Paints the percentage left on your tightest limit onto the toolbar badge and
   colours it green / amber / red.
-- Warns in the popup before you run out: amber under 15% left, red at the limit.
+- Keeps a seven-day history of your tightest limit and draws it as a sparkline in
+  each card, so you can see how fast you are burning through a window.
+- Sends a desktop notification the first time a limit drops below your alert
+  threshold, and re-arms itself once that limit recovers.
+- Warns in the popup before you run out: amber under your threshold (15% by
+  default), red at the limit.
+- Has a settings page: alert threshold, refresh interval, which limit the badge
+  follows, and a light / dark / system panel theme.
 
 ## Install
 
@@ -57,17 +64,24 @@ fills in.
 
 ```
 extension/
-  manifest.json        MV3 manifest: permissions, content scripts, popup
-  background.js        stores reports, merges them, paints the badge
+  manifest.json        MV3 manifest: permissions, content scripts, popup, options
+  settings.js          alert threshold, refresh interval, badge focus, theme
+  background.js        stores reports and history, alerts, paints the badge
   content/
     common.js          shared parsing, page scanning, reporting
     claude.js          Claude detection
     chatgpt.js         ChatGPT detection
   popup/
-    popup.html/.css/.js  the toolbar panel
+    popup.html/.css/.js  the toolbar panel, including the seven-day trend
+  options/
+    options.html/.css/.js  the settings page
   icons/               toolbar icons
-preview/               standalone page that renders the real popup and audits the files
+preview/               standalone page that renders the real popup and settings
+                       page, and audits the shipped files
 ```
+
+Settings live in `chrome.storage.local` under `settings`; history is kept per
+provider under `history:<provider>` as `{ t, used }` points, pruned to seven days.
 
 `preview/` exists only so the popup can be seen in a normal browser tab; it is not
 part of the extension. It ships no sample numbers — an empty panel there is the

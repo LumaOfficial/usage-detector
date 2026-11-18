@@ -308,10 +308,38 @@
     NS.started[provider] = true;
 
     const safeRun = () => Promise.resolve().then(run).catch(() => {});
+    const DEFAULT_MINUTES = 5;
+    let timer = null;
+
+    /* The refresh interval comes from the settings page. */
+    const schedule = (minutes) => {
+      if (timer) clearInterval(timer);
+      timer = setInterval(() => {
+        if (document.visibilityState === 'visible') safeRun();
+      }, minutes * 60 * 1000);
+    };
+
     setTimeout(safeRun, 1200);
-    setInterval(() => {
-      if (document.visibilityState === 'visible') safeRun();
-    }, 5 * 60 * 1000);
+    schedule(DEFAULT_MINUTES);
+
+    try {
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local
+          .get('settings')
+          .then((stored) => {
+            const minutes = Number(stored && stored.settings && stored.settings.refreshMinutes);
+            if (Number.isFinite(minutes) && minutes > 0) schedule(minutes);
+          })
+          .catch(() => {});
+        chrome.storage.onChanged.addListener((changes, area) => {
+          if (area !== 'local' || !changes.settings) return;
+          const minutes = Number(changes.settings.newValue && changes.settings.newValue.refreshMinutes);
+          if (Number.isFinite(minutes) && minutes > 0) schedule(minutes);
+        });
+      }
+    } catch (_) {
+      /* storage unavailable — keep the default cadence */
+    }
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') safeRun();
     });

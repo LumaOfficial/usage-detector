@@ -11,8 +11,17 @@ const isExtension = typeof chrome !== 'undefined' && Boolean(chrome.runtime && c
 const MINUTE = 60000;
 const HOUR = 3600000;
 const DAY = 86400000;
+const HISTORY_DAYS = 7;
 
-const state = { claude: null, chatgpt: null };
+const state = { claude: null, chatgpt: null, history: { claude: [], chatgpt: [] } };
+
+const settingsStore = globalThis.UsageDetectorSettings;
+let settings = (settingsStore && settingsStore.DEFAULTS) || {
+  alertThreshold: 15,
+  refreshMinutes: 5,
+  badgeMode: 'worst',
+  theme: 'auto',
+};
 let flashTimer = null;
 
 const el = (tag, className, text) => {
@@ -37,8 +46,12 @@ function until(timestamp) {
   if (diff < MINUTE) return 'less than a minute';
   if (diff < HOUR) return `${Math.round(diff / MINUTE)} min`;
   if (diff < DAY) {
-    const hours = Math.floor(diff / HOUR);
-    const minutes = Math.round((diff % HOUR) / MINUTE);
+    let hours = Math.floor(diff / HOUR);
+    let minutes = Math.round((diff % HOUR) / MINUTE);
+    if (minutes === 60) {
+      hours += 1;
+      minutes = 0;
+    }
     return minutes ? `${hours} hr ${minutes} min` : `${hours} hr`;
   }
   return `${Math.round(diff / DAY)} days`;
@@ -48,6 +61,16 @@ function severity(usedPercent) {
   if (usedPercent >= 100) return 'bad';
   if (usedPercent >= 85) return 'warn';
   return 'ok';
+}
+
+function applyTheme(theme) {
+  const resolved =
+    theme === 'auto'
+      ? window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+        ? 'light'
+        : 'dark'
+      : theme;
+  document.documentElement.dataset.theme = resolved;
 }
 
 function worstRemaining(record) {
@@ -69,7 +92,7 @@ function pill(record) {
     return el('span', 'pill pill--idle', record.status === 'unknown' ? 'No data' : 'Tracking');
   }
   const rounded = Math.round(remaining);
-  if (remaining <= 15) return el('span', 'pill pill--warn', `${rounded}% left`);
+  if (remaining <= settings.alertThreshold) return el('span', 'pill pill--warn', `${rounded}% left`);
   return el('span', 'pill pill--ok', `${rounded}% left`);
 }
 
@@ -101,6 +124,46 @@ function windowRow(window) {
 
   if (window.resetsAt) row.append(el('div', 'win-foot', `Resets in ${until(window.resetsAt)}`));
   return row;
+}
+
+/* Sparkline of the tightest limit used, across the last seven days. */
+function trendChart(points) {
+  const wrap = el('div', 'trend');
+
+  const values = points.map((point) => point.used);
+  const head = el('div', 'trend-head');
+  head.append(el('span', 'trend-label', `Last ${HISTORY_DAYS} days`));
+  head.append(el('span', 'trend-peak', `peak ${Math.round(Math.max(...values))}% used`));
+  wrap.append(head);
+
+  const width = 100;
+  const height = 34;
+  const span = HISTORY_DAYS * DAY;
+  const end = Date.now();
+  const start = end - span;
+
+  const x = (time) => ((Math.min(end, Math.max(start, time)) - start) / span) * width;
+  const y = (used) => height - (Math.min(100, Math.max(0, used)) / 100) * height;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'trend-svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', `Tightest limit used over the last ${HISTORY_DAYS} days`);
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  line.setAttribute('class', 'trend-line');
+  line.setAttribute('vector-effect', 'non-scaling-stroke');
+  line.setAttribute('points', points.map((point) => `${x(point.t).toFixed(2)},${y(point.used).toFixed(2)}`).join(' '));
+  svg.append(line);
+  wrap.append(svg);
+
+  const foot = el('div', 'trend-foot');
+  foot.append(el('span', null, `${HISTORY_DAYS} days ago`), el('span', null, 'now'));
+  wrap.append(foot);
+
+  return wrap;
 }
 
 function emptyBlock(provider, record) {
@@ -143,6 +206,9 @@ function card(provider, record) {
     section.append(emptyBlock(provider, record));
   }
 
+  const points = (state.history && state.history[provider.id]) || [];
+  if (points.length > 1) section.append(trendChart(points));
+
   if (record && record.detectedAt) {
     const meta = [`Checked ${ago(record.detectedAt)}`];
     if (record.source === 'page') meta.push('read from the page');
@@ -183,9 +249,23 @@ function flash(message) {
 }
 
 async function load() {
-  const keys = PROVIDERS.map((provider) => `usage:${provider.id}`);
+  settings = settingsStore ? await settingsStore.get() : settings;
+  applyTheme(settings.theme);
+
+  if (!isExtension) {
+    render();
+    return;
+  }
+
+  const keys = PROVIDERS.flatMap((provider) => [`usage:${provider.id}`, `history:${provider.id}`]);
   const stored = await chrome.storage.local.get(keys);
-  for (const provider of PROVIDERS) state[provider.id] = stored[`usage:${provider.id}`] || null;
+
+  for (const provider of PROVIDERS) {
+    state[provider.id] = stored[`usage:${provider.id}`] || null;
+    const history = stored[`history:${provider.id}`];
+    state.history[provider.id] = Array.isArray(history) ? history : [];
+  }
+
   render();
 }
 
@@ -233,6 +313,12 @@ document.addEventListener('click', (event) => {
     return;
   }
 
+  const settingsButton = target.closest('#settings');
+  if (settingsButton) {
+    if (isExtension) chrome.runtime.openOptionsPage();
+    return;
+  }
+
   const refreshButton = target.closest('#refresh');
   if (refreshButton) refresh(refreshButton);
 });
@@ -241,10 +327,19 @@ if (isExtension) {
   load().then(refreshIfEmpty);
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
-    if (Object.keys(changes).some((key) => key.startsWith('usage:'))) load();
+    const touched = Object.keys(changes);
+    if (touched.some((key) => key.startsWith('usage:') || key.startsWith('history:') || key === 'settings')) load();
   });
 } else {
   document.body.classList.add('is-embedded');
+  const settingsButton = document.getElementById('settings');
+  if (settingsButton) settingsButton.hidden = true;
+
+  // The preview renders the settings page beside this panel; follow its changes.
+  window.addEventListener('storage', (event) => {
+    if (!event.key || event.key === 'usage-detector:settings') load();
+  });
+  load();
 }
 
 render();

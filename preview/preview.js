@@ -73,6 +73,8 @@
 
     const worker = manifest.background && manifest.background.service_worker;
     const popup = manifest.action && manifest.action.default_popup;
+    const optionsPage = manifest.options_ui && manifest.options_ui.page;
+    const permissions = manifest.permissions || [];
     const hosts = (manifest.host_permissions || []).map((host) => host.replace('https://', '').replace('/*', ''));
     const scripts = manifest.content_scripts || [];
     const icons = Object.keys(manifest.icons || {});
@@ -81,6 +83,8 @@
       item(manifest.manifest_version === 3, 'Manifest V3', `version ${manifest.version}`),
       item(Boolean(worker) && (await exists(`/extension/${worker}`)), 'Background worker', worker || 'missing'),
       item(Boolean(popup) && (await exists(`/extension/${popup}`)), 'Toolbar popup', popup || 'missing'),
+      item(Boolean(optionsPage) && (await exists(`/extension/${optionsPage}`)), 'Settings page', optionsPage || 'missing'),
+      item(permissions.includes('notifications'), 'Low-usage alerts', permissions.join(', ')),
       item(hosts.length > 0, 'Site access', hosts.join(', ') || 'none'),
       item(
         scripts.length === 2,

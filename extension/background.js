@@ -1,6 +1,10 @@
-/* Usage Detector — stores what the content scripts report and paints the badge. */
+/* Usage Detector — stores what the content scripts report, keeps a short
+   history, warns when a limit runs low, and paints the badge. */
+
+importScripts('settings.js');
 
 const PROVIDERS = ['claude', 'chatgpt'];
+const NAMES = { claude: 'Claude', chatgpt: 'ChatGPT' };
 
 const PATTERNS = {
   claude: ['https://claude.ai/*'],
@@ -12,13 +16,32 @@ const SCRIPTS = {
   chatgpt: ['content/common.js', 'content/chatgpt.js'],
 };
 
+const HISTORY_MS = 7 * 24 * 60 * 60 * 1000;
+const HISTORY_MAX = 480;
+
 const keyFor = (provider) => `usage:${provider}`;
+const historyKey = (provider) => `history:${provider}`;
+const alertKey = (provider) => `alert:${provider}`;
 
 function providerForUrl(url) {
   if (!url) return null;
   if (url.startsWith('https://claude.ai/')) return 'claude';
   if (url.startsWith('https://chatgpt.com/') || url.startsWith('https://chat.openai.com/')) return 'chatgpt';
   return null;
+}
+
+function worstUsed(record) {
+  let worst = null;
+  for (const window of (record && record.windows) || []) {
+    if (typeof window.usedPercent !== 'number') continue;
+    worst = worst == null ? window.usedPercent : Math.max(worst, window.usedPercent);
+  }
+  return worst;
+}
+
+function worstRemaining(record) {
+  const used = worstUsed(record);
+  return used == null ? null : Math.max(0, 100 - used);
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, respond) => {
@@ -67,14 +90,63 @@ async function saveReport(provider, payload) {
   }
 
   await chrome.storage.local.set({ [key]: record });
+  await recordHistory(provider, record);
+  await checkAlert(provider, record);
   await updateBadge();
 }
 
+/* One point per meaningful change: the percentage used on the tightest limit. */
+async function recordHistory(provider, record) {
+  const used = worstUsed(record);
+  if (used == null) return;
+
+  const key = historyKey(provider);
+  const stored = (await chrome.storage.local.get(key))[key];
+  const points = Array.isArray(stored) ? stored : [];
+  const at = record.detectedAt || Date.now();
+  const last = points[points.length - 1];
+
+  if (last && at - last.t < 60000 && Math.abs(last.used - used) < 0.5) return;
+
+  points.push({ t: at, used });
+
+  const cutoff = Date.now() - HISTORY_MS;
+  await chrome.storage.local.set({ [key]: points.filter((point) => point.t >= cutoff).slice(-HISTORY_MAX) });
+}
+
+/* One notification per slide below the threshold; re-armed once it recovers. */
+async function checkAlert(provider, record) {
+  const settings = await UsageDetectorSettings.get();
+  const remaining = worstRemaining(record);
+  const key = alertKey(provider);
+  const stored = (await chrome.storage.local.get(key))[key] || null;
+
+  if (remaining == null || remaining > settings.alertThreshold) {
+    if (stored) await chrome.storage.local.set({ [key]: null });
+    return;
+  }
+
+  if (stored && stored.remaining <= settings.alertThreshold) return;
+  await chrome.storage.local.set({ [key]: { remaining, at: Date.now() } });
+
+  if (!chrome.notifications) return;
+  const plan = record.plan ? ` · ${record.plan} plan` : '';
+  chrome.notifications.create(`usage-detector:${provider}:${Date.now()}`, {
+    type: 'basic',
+    iconUrl: 'icons/icon-128.png',
+    title: `${NAMES[provider] || provider} usage is low`,
+    message: `${Math.round(remaining)}% left on your tightest limit${plan}.`,
+    priority: 2,
+  });
+}
+
 async function updateBadge() {
-  const stored = await chrome.storage.local.get(PROVIDERS.map(keyFor));
+  const settings = await UsageDetectorSettings.get();
+  const providers = settings.badgeMode === 'worst' ? PROVIDERS : [settings.badgeMode];
+  const stored = await chrome.storage.local.get(providers.map(keyFor));
 
   let remaining = null;
-  for (const provider of PROVIDERS) {
+  for (const provider of providers) {
     const record = stored[keyFor(provider)];
     if (!record || !Array.isArray(record.windows)) continue;
     for (const window of record.windows) {
@@ -155,4 +227,8 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 chrome.runtime.onStartup.addListener(() => {
   updateBadge();
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.settings) updateBadge();
 });
