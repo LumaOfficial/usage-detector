@@ -19,7 +19,8 @@
 
   <p class="banner" id="banner" hidden></p>
 
-  <form class="rows" id="settings" autocomplete="off">
+  <h2 class="group-title">Alerts &amp; quiet hours</h2>
+  <form class="rows" id="alerts" autocomplete="off">
     <div class="row">
       <div class="row-text">
         <label class="row-title" for="alertThreshold">Low-usage alerts</label>
@@ -41,6 +42,75 @@
       </div>
     </div>
 
+    <div class="row" id="silentNotificationsRow">
+      <div class="row-text">
+        <label class="row-title" for="silentNotifications">Silent notifications</label>
+        <span class="row-hint">Show the alert without the system sound.</span>
+      </div>
+      <div class="control">
+        <input id="silentNotifications" name="silentNotifications" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="alertRepeatRow">
+      <div class="row-text">
+        <label class="row-title" for="alertRepeatMinutes">Repeat the reminder</label>
+        <span class="row-hint">Once is enough, or remind yourself again while the limit stays low.</span>
+      </div>
+      <div class="control">
+        <select id="alertRepeatMinutes" name="alertRepeatMinutes">
+          <option value="0">Once per drop</option>
+          <option value="15">Every 15 minutes</option>
+          <option value="30">Every 30 minutes</option>
+          <option value="60">Every hour</option>
+          <option value="120">Every 2 hours</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="notifyOnReset">Notify when a limit resets</label>
+        <span class="row-hint">A quiet ping when a used-up limit refills.</span>
+      </div>
+      <div class="control">
+        <input id="notifyOnReset" name="notifyOnReset" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="quietHours">Quiet hours</label>
+        <span class="row-hint">Hold notifications during this window; the panel and the badge keep counting.</span>
+      </div>
+      <div class="control">
+        <input id="quietHours" name="quietHours" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="quietStartRow">
+      <div class="row-text">
+        <label class="row-title" for="quietStart">Quiet hours start</label>
+        <span class="row-hint">When notifications pause.</span>
+      </div>
+      <div class="control">
+        <select id="quietStart" name="quietStart"></select>
+      </div>
+    </div>
+
+    <div class="row" id="quietEndRow">
+      <div class="row-text">
+        <label class="row-title" for="quietEnd">Quiet hours end</label>
+        <span class="row-hint">When they start again. A window can wrap past midnight.</span>
+      </div>
+      <div class="control">
+        <select id="quietEnd" name="quietEnd"></select>
+      </div>
+    </div>
+  </form>
+
+  <h2 class="group-title">Refresh &amp; background</h2>
+  <form class="rows" id="refresh" autocomplete="off">
     <div class="row">
       <div class="row-text">
         <label class="row-title" for="refreshMinutes">Refresh interval</label>
@@ -60,14 +130,77 @@
 
     <div class="row">
       <div class="row-text">
-        <label class="row-title" for="badgeMode">Toolbar badge</label>
-        <span class="row-hint">Which limit the percentage on the toolbar icon follows.</span>
+        <label class="row-title" for="backgroundPolling">Background checks</label>
+        <span class="row-hint">Read the sites on a timer even when no tab is open. Off only reads when you ask.</span>
       </div>
       <div class="control">
-        <select id="badgeMode" name="badgeMode"></select>
+        <input id="backgroundPolling" name="backgroundPolling" class="switch" type="checkbox">
       </div>
     </div>
 
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="refreshOnFocus">Refresh when a tab wakes</label>
+        <span class="row-hint">Read the site again the moment you switch back to its tab.</span>
+      </div>
+      <div class="control">
+        <input id="refreshOnFocus" name="refreshOnFocus" class="switch" type="checkbox">
+      </div>
+    </div>
+  </form>
+
+  <h2 class="group-title">History &amp; data</h2>
+  <form class="rows" id="history" autocomplete="off">
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="recordHistory">Keep history</label>
+        <span class="row-hint">Store the trend points the sparkline is drawn from.</span>
+      </div>
+      <div class="control">
+        <input id="recordHistory" name="recordHistory" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="historyDaysRow">
+      <div class="row-text">
+        <label class="row-title" for="historyDays">History length</label>
+        <span class="row-hint">How far back the trend goes before old points are pruned.</span>
+      </div>
+      <div class="control">
+        <select id="historyDays" name="historyDays">
+          <option value="3">3 days</option>
+          <option value="7">7 days</option>
+          <option value="14">14 days</option>
+          <option value="30">30 days</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row" id="showHistoryRow">
+      <div class="row-text">
+        <label class="row-title" for="showHistory">Trend sparkline</label>
+        <span class="row-hint">Draw the sparkline of your tightest limit in each site's details.</span>
+      </div>
+      <div class="control">
+        <input id="showHistory" name="showHistory" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <span class="row-title">Your data</span>
+        <span class="row-hint">Export everything stored, clear the trend history, or put every setting back to its default.</span>
+      </div>
+      <div class="control actions">
+        <button type="button" class="action" id="exportData">Export</button>
+        <button type="button" class="action" id="clearHistory">Clear history</button>
+        <button type="button" class="action" id="resetSettings">Reset settings</button>
+      </div>
+    </div>
+  </form>
+
+  <h2 class="group-title">Panel &amp; widget</h2>
+  <form class="rows" id="panel" autocomplete="off">
     <div class="row">
       <div class="row-text">
         <label class="row-title" for="theme">Panel theme</label>
@@ -82,13 +215,37 @@
       </div>
     </div>
 
-    <div class="row">
+    <div class="row" id="badgeModeRow">
       <div class="row-text">
-        <label class="row-title" for="showHistory">Seven-day trend</label>
-        <span class="row-hint">Draw the sparkline of your tightest limit in each site's details.</span>
+        <label class="row-title" for="badgeMode">Toolbar badge</label>
+        <span class="row-hint">Which limit the number on the toolbar icon follows.</span>
       </div>
       <div class="control">
-        <input id="showHistory" name="showHistory" class="switch" type="checkbox">
+        <select id="badgeMode" name="badgeMode"></select>
+      </div>
+    </div>
+
+    <div class="row" id="badgeStyleRow">
+      <div class="row-text">
+        <label class="row-title" for="badgeStyle">Badge style</label>
+        <span class="row-hint">A percentage, a coloured dot, or nothing at all.</span>
+      </div>
+      <div class="control">
+        <select id="badgeStyle" name="badgeStyle">
+          <option value="percent">Percentage</option>
+          <option value="dot">Coloured dot</option>
+          <option value="off">Hidden</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="hideIdleSites">Only sites with numbers</label>
+        <span class="row-hint">Hide the sites that have nothing to report yet; they stay one click away.</span>
+      </div>
+      <div class="control">
+        <input id="hideIdleSites" name="hideIdleSites" class="switch" type="checkbox">
       </div>
     </div>
 
@@ -124,6 +281,23 @@
       </div>
       <div class="control">
         <input id="overlayCompact" name="overlayCompact" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="overlayRowsRow">
+      <div class="row-text">
+        <label class="row-title" for="overlayRows">Widget rows</label>
+        <span class="row-hint">How many of your tightest limits the open widget lists.</span>
+      </div>
+      <div class="control">
+        <select id="overlayRows" name="overlayRows">
+          <option value="1">1 row</option>
+          <option value="2">2 rows</option>
+          <option value="3">3 rows</option>
+          <option value="4">4 rows</option>
+          <option value="5">5 rows</option>
+          <option value="6">6 rows</option>
+        </select>
       </div>
     </div>
   </form>

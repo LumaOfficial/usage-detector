@@ -267,6 +267,36 @@ h1 {
   gap: 9px;
 }
 
+.actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.action {
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--ink);
+  background: var(--glass-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.action:hover {
+  border-color: var(--line-strong);
+  background: linear-gradient(120deg, rgba(124, 92, 255, 0.22), rgba(47, 212, 165, 0.16));
+  transform: translateY(-1px);
+}
+
+.action:focus-visible {
+  outline: 2px solid rgba(124, 92, 255, 0.9);
+  outline-offset: 2px;
+}
+
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -534,7 +564,8 @@ input[type="range"]:focus-visible {
   .site,
   .saved,
   .switch,
-  .switch::after {
+  .switch::after,
+  .action {
     transition: none;
   }
 }

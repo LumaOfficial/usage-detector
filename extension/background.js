@@ -25,7 +25,7 @@ const SCRIPTS = Object.fromEntries(
 
 const ALARM = 'usage-detector:poll';
 
-const HISTORY_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const HISTORY_MAX = 480;
 
 const keyFor = (provider) => `usage:${provider}`;
@@ -118,11 +118,17 @@ async function readDirect(provider) {
 }
 
 async function pollSites() {
+  const settings = await Settings.get();
+  if (!settings.backgroundPolling) return;
   for (const provider of await enabledProviders()) await readDirect(provider);
 }
 
 async function schedulePolling() {
   const settings = await Settings.get();
+  if (!settings.backgroundPolling) {
+    await chrome.alarms.clear(ALARM);
+    return;
+  }
   const minutes = Math.max(1, Math.round(settings.refreshMinutes));
   await chrome.alarms.create(ALARM, { periodInMinutes: minutes, delayInMinutes: minutes });
 }
@@ -174,6 +180,7 @@ async function saveReport(provider, payload) {
     record.notes = record.notes.length ? record.notes : stored.notes;
   }
 
+  await checkReset(provider, record, stored);
   await chrome.storage.local.set({ [key]: record });
   await recordHistory(provider, record);
   await checkAlert(provider, record);
@@ -185,6 +192,9 @@ async function recordHistory(provider, record) {
   const used = worstUsed(record);
   if (used == null) return;
 
+  const settings = await Settings.get();
+  if (!settings.recordHistory) return;
+
   const key = historyKey(provider);
   const stored = (await chrome.storage.local.get(key))[key];
   const points = Array.isArray(stored) ? stored : [];
@@ -195,11 +205,12 @@ async function recordHistory(provider, record) {
 
   points.push({ t: at, used });
 
-  const cutoff = Date.now() - HISTORY_MS;
+  const cutoff = Date.now() - settings.historyDays * DAY_MS;
   await chrome.storage.local.set({ [key]: points.filter((point) => point.t >= cutoff).slice(-HISTORY_MAX) });
 }
 
-/* One notification per slide below the threshold; re-armed once it recovers. */
+/* One notification per slide below the threshold, optionally repeated while
+   the limit stays low; quiet hours hold it until the window ends. */
 async function checkAlert(provider, record) {
   const settings = await Settings.get();
   if (!settings.notifications) return;
@@ -213,7 +224,12 @@ async function checkAlert(provider, record) {
     return;
   }
 
-  if (stored && stored.remaining <= settings.alertThreshold) return;
+  const already = Boolean(stored && stored.remaining <= settings.alertThreshold);
+  const repeatMs = settings.alertRepeatMinutes * 60000;
+  const repeatDue = Boolean(already && repeatMs > 0 && Date.now() - stored.at >= repeatMs);
+  if (already && !repeatDue) return;
+  if (Settings.inQuietHours(settings)) return;
+
   await chrome.storage.local.set({ [key]: { remaining, at: Date.now() } });
 
   if (!chrome.notifications) return;
@@ -224,11 +240,47 @@ async function checkAlert(provider, record) {
     title: `${NAMES[provider] || provider} usage is low`,
     message: `${Math.round(remaining)}% left on your tightest limit${plan}.`,
     priority: 2,
+    silent: Boolean(settings.silentNotifications),
+  });
+}
+
+/* A window that fell from nearly used-up to mostly free has reset. */
+async function checkReset(provider, record, previous) {
+  if (!previous || !Array.isArray(previous.windows) || !previous.windows.length) return;
+
+  const settings = await Settings.get();
+  if (!settings.notifications || !settings.notifyOnReset) return;
+  if (Settings.inQuietHours(settings)) return;
+
+  let reset = null;
+  for (const window of record.windows) {
+    if (typeof window.usedPercent !== 'number') continue;
+    const before = previous.windows.find((item) => item.id === window.id);
+    if (!before || typeof before.usedPercent !== 'number') continue;
+    if (before.usedPercent >= 80 && window.usedPercent <= before.usedPercent - 20) {
+      reset = window;
+      break;
+    }
+  }
+  if (!reset || !chrome.notifications) return;
+
+  chrome.notifications.create(`usage-detector:${provider}:reset:${Date.now()}`, {
+    type: 'basic',
+    iconUrl: 'icons/icon-128.png',
+    title: `${NAMES[provider] || provider} usage reset`,
+    message: `${reset.label || 'Your limit'} is back to ${Math.round(reset.usedPercent)}% used.`,
+    priority: 1,
+    silent: Boolean(settings.silentNotifications),
   });
 }
 
 async function updateBadge() {
   const settings = await Settings.get();
+  if (settings.badgeStyle === 'off') {
+    await chrome.action.setBadgeText({ text: '' });
+    return;
+  }
+
   const enabled = settings.enabledSites.filter((id) => PROVIDERS.includes(id));
   const focus = settings.badgeMode !== 'worst' && enabled.includes(settings.badgeMode) ? [settings.badgeMode] : enabled;
   const stored = await chrome.storage.local.get(focus.map(keyFor));
@@ -248,7 +300,9 @@ async function updateBadge() {
     return;
   }
 
-  await chrome.action.setBadgeText({ text: String(Math.max(0, Math.round(remaining))) });
+  await chrome.action.setBadgeText({
+    text: settings.badgeStyle === 'dot' ? '•' : String(Math.max(0, Math.round(remaining))),
+  });
   await chrome.action.setBadgeBackgroundColor({
     color: remaining <= 10 ? '#e2555b' : remaining <= 30 ? '#e8a33d' : '#2f9e6f',
   });

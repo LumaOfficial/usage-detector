@@ -217,6 +217,7 @@
     const MIN_GAP_MS = 10000;
     let timer = null;
     let lastRun = 0;
+    let refreshOnFocus = true;
 
     /* The timer, a tab focus and the popup's refresh can all fire at once;
        keep them from hammering the site's own API. */
@@ -243,21 +244,25 @@
         chrome.storage.local
           .get('settings')
           .then((stored) => {
-            const minutes = Number(stored && stored.settings && stored.settings.refreshMinutes);
+            const settings = (stored && stored.settings) || {};
+            const minutes = Number(settings.refreshMinutes);
             if (Number.isFinite(minutes) && minutes > 0) schedule(minutes);
+            refreshOnFocus = settings.refreshOnFocus !== false;
           })
           .catch(() => {});
         chrome.storage.onChanged.addListener((changes, area) => {
           if (area !== 'local' || !changes.settings) return;
-          const minutes = Number(changes.settings.newValue && changes.settings.newValue.refreshMinutes);
+          const settings = changes.settings.newValue || {};
+          const minutes = Number(settings.refreshMinutes);
           if (Number.isFinite(minutes) && minutes > 0) schedule(minutes);
+          refreshOnFocus = settings.refreshOnFocus !== false;
         });
       }
     } catch (_) {
       /* storage unavailable — keep the default cadence */
     }
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') safeRun();
+      if (refreshOnFocus && document.visibilityState === 'visible') safeRun();
     });
     NS.onRefresh(safeRun);
   };

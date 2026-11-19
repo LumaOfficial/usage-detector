@@ -15,10 +15,24 @@
     overlayEnabled: true,
     overlayPosition: 'bottom-right',
     overlayCompact: false,
+    quietHours: false,
+    quietStart: 22,
+    quietEnd: 7,
+    alertRepeatMinutes: 0,
+    silentNotifications: false,
+    notifyOnReset: false,
+    recordHistory: true,
+    historyDays: 7,
+    hideIdleSites: false,
+    badgeStyle: 'percent',
+    backgroundPolling: true,
+    refreshOnFocus: true,
+    overlayRows: 4,
   };
 
   const KEY = 'settings';
   const POSITIONS = ['bottom-right', 'bottom-left', 'top-right', 'top-left'];
+  const BADGE_STYLES = ['percent', 'dot', 'off'];
 
   const clampNumber = (value, min, max, fallback) => {
     const parsed = Number(value);
@@ -54,7 +68,30 @@
       overlayEnabled: bool(raw.overlayEnabled, DEFAULTS.overlayEnabled),
       overlayPosition: POSITIONS.includes(raw.overlayPosition) ? raw.overlayPosition : DEFAULTS.overlayPosition,
       overlayCompact: bool(raw.overlayCompact, DEFAULTS.overlayCompact),
+      quietHours: bool(raw.quietHours, DEFAULTS.quietHours),
+      quietStart: clampNumber(raw.quietStart, 0, 23, DEFAULTS.quietStart),
+      quietEnd: clampNumber(raw.quietEnd, 0, 23, DEFAULTS.quietEnd),
+      alertRepeatMinutes: clampNumber(raw.alertRepeatMinutes, 0, 720, DEFAULTS.alertRepeatMinutes),
+      silentNotifications: bool(raw.silentNotifications, DEFAULTS.silentNotifications),
+      notifyOnReset: bool(raw.notifyOnReset, DEFAULTS.notifyOnReset),
+      recordHistory: bool(raw.recordHistory, DEFAULTS.recordHistory),
+      historyDays: clampNumber(raw.historyDays, 1, 30, DEFAULTS.historyDays),
+      hideIdleSites: bool(raw.hideIdleSites, DEFAULTS.hideIdleSites),
+      badgeStyle: BADGE_STYLES.includes(raw.badgeStyle) ? raw.badgeStyle : DEFAULTS.badgeStyle,
+      backgroundPolling: bool(raw.backgroundPolling, DEFAULTS.backgroundPolling),
+      refreshOnFocus: bool(raw.refreshOnFocus, DEFAULTS.refreshOnFocus),
+      overlayRows: clampNumber(raw.overlayRows, 1, 6, DEFAULTS.overlayRows),
     };
+  };
+
+  /* True while the clock sits inside the quiet window; it may wrap midnight. */
+  const inQuietHours = (settings, now = new Date()) => {
+    if (!settings || !settings.quietHours) return false;
+    const start = Number(settings.quietStart);
+    const end = Number(settings.quietEnd);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start === end) return false;
+    const hour = now.getHours();
+    return start < end ? hour >= start && hour < end : hour >= start || hour < end;
   };
 
   const usingExtension = () => typeof chrome !== 'undefined' && Boolean(chrome.storage && chrome.storage.local);
@@ -80,5 +117,5 @@
     return next;
   };
 
-  globalThis.UsageDetectorSettings = { DEFAULTS, KEY, POSITIONS, clean, get, save };
+  globalThis.UsageDetectorSettings = { DEFAULTS, KEY, POSITIONS, BADGE_STYLES, inQuietHours, clean, get, save };
 })();

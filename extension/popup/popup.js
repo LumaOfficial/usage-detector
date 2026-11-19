@@ -244,16 +244,17 @@ function windowRow(window) {
 /* Sparkline of the tightest limit used, across the last seven days. */
 function trendChart(points) {
   const wrap = el('div', 'trend');
+  const days = settings.historyDays || HISTORY_DAYS;
 
   const values = points.map((point) => point.used);
   const head = el('div', 'trend-head');
-  head.append(el('span', 'trend-label', `Last ${HISTORY_DAYS} days`));
+  head.append(el('span', 'trend-label', `Last ${days} days`));
   head.append(el('span', 'trend-peak', `peak ${Math.round(Math.max(...values))}% used`));
   wrap.append(head);
 
   const width = 100;
   const height = 34;
-  const span = HISTORY_DAYS * DAY;
+  const span = days * DAY;
   const end = Date.now();
   const start = end - span;
 
@@ -265,7 +266,7 @@ function trendChart(points) {
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
   svg.setAttribute('preserveAspectRatio', 'none');
   svg.setAttribute('role', 'img');
-  svg.setAttribute('aria-label', `Tightest limit used over the last ${HISTORY_DAYS} days`);
+  svg.setAttribute('aria-label', `Tightest limit used over the last ${days} days`);
 
   const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
   line.setAttribute('class', 'trend-line');
@@ -275,7 +276,7 @@ function trendChart(points) {
   wrap.append(svg);
 
   const foot = el('div', 'trend-foot');
-  foot.append(el('span', null, `${HISTORY_DAYS} days ago`), el('span', null, 'now'));
+  foot.append(el('span', null, `${days} days ago`), el('span', null, 'now'));
   wrap.append(foot);
 
   return wrap;
@@ -379,9 +380,9 @@ function renderList() {
   const activeId = state.active && state.active.id;
 
   const visible = providers.filter((provider) => state.records[provider.id] || provider.id === activeId);
-  /* Nothing read yet: list a first handful and keep the rest behind the toggle,
-     so a long site list doesn't turn the empty panel into a wall of rows. */
-  const primary = visible.length ? visible : providers.slice(0, 8);
+  /* "Only sites with numbers" hides the idle rows; otherwise, with nothing read
+     yet, list a first handful and keep the rest behind the toggle. */
+  const primary = visible.length || settings.hideIdleSites ? visible : providers.slice(0, 8);
   const rest = providers.filter((provider) => !primary.includes(provider));
 
   for (const provider of primary) root.append(providerRow(provider));

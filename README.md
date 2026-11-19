@@ -37,10 +37,14 @@ keeps the countdown in your toolbar.
   the panel and hidden from the site's own CSS.
 - Paints the percentage left on your tightest limit onto the toolbar badge and
   colours it green / amber / red.
-- Keeps a seven-day history of your tightest limit and draws it as a sparkline in
-  each site's details.
+- Keeps a history of your tightest limit (seven days by default, up to thirty)
+  and draws it as a sparkline in each site's details.
 - Sends a desktop notification the first time a limit drops below your alert
-  threshold, and re-arms itself once that limit recovers.
+  threshold, re-arms itself once that limit recovers, and can repeat the
+  reminder, stay silent, ping you when a limit resets, or hold everything during
+  quiet hours.
+- Exports everything it stored as JSON, clears the trend history, and resets
+  every setting from the settings page.
 
 ## Settings
 
@@ -50,14 +54,26 @@ The settings page saves as you change a control:
 | --- | --- |
 | Low-usage alerts | Threshold for the amber pill and the notification |
 | Desktop notifications | Turn the notification off while keeping the panel and badge |
+| Silent notifications | Alert without the system sound |
+| Repeat the reminder | Remind again while a limit stays low |
+| Notify when a limit resets | Ping when a used-up limit refills |
+| Quiet hours | Pause notifications between two times; the count keeps running |
 | Refresh interval | How often the sites are checked |
+| Background checks | Poll on the timer with no tab open |
+| Refresh when a tab wakes | Re-read a site when you switch back to it |
+| Keep history | Store the trend points the sparkline is drawn from |
+| History length | 3, 7, 14 or 30 days before old points are pruned |
+| Trend sparkline | Show or hide the sparkline |
 | Toolbar badge | Tightest limit, or any single site |
+| Badge style | Percentage, coloured dot or hidden |
+| Only sites with numbers | Hide the idle sites in the panel |
 | Panel theme | System, light or dark — panel, settings and on-page widget |
-| Seven-day trend | Show or hide the sparkline |
 | Widget on the AI sites | Turn the on-page widget on or off |
 | Widget corner | Bottom right, bottom left, top right or top left |
 | Start the widget collapsed | Show only the percentage until clicked |
+| Widget rows | How many limits the open widget lists |
 | Sites to track | Which of the supported sites the panel, badge and widget count |
+| Export / Clear history / Reset | Download everything stored, wipe the trend, restore defaults |
 
 Settings live in `chrome.storage.local` under `settings`.
 
@@ -132,7 +148,7 @@ preview/               standalone page that shows the real panel and settings
 ```
 
 History is kept per provider under `history:<provider>` as `{ t, used }` points,
-pruned to seven days.
+pruned to the history length setting (seven days by default).
 
 `preview/` exists only so the extension's own pages can be seen in a normal
 browser tab; it is not part of the extension. It ships no sample numbers — an

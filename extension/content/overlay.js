@@ -226,7 +226,8 @@
 
     const body = node('div', 'body');
     if (rows.length) {
-      for (const entry of rows.slice(0, MAX_ROWS)) {
+      const maxRows = Math.max(1, Math.min(6, Number(settings.overlayRows) || MAX_ROWS));
+      for (const entry of rows.slice(0, maxRows)) {
         const row = node('div', 'row');
         const mark = node('span', 'mark', entry.provider.mark);
         mark.style.setProperty('--accent', entry.provider.accent);
