@@ -222,7 +222,7 @@ function emptyBlock(provider, record) {
   if (signedOut) text = `Sign in to ${provider.hostName} to read your usage.`;
   else if (note) text = note;
   else if (here) text = `You're on ${provider.hostName} — the panel fills in as soon as the page reports.`;
-  else text = `Open ${provider.hostName} in a tab — the extension reads your usage from the page.`;
+  else text = `Nothing read yet — the extension checks ${provider.hostName} on its own, and reads the page when you have it open.`;
   wrap.append(el('p', 'empty-text', text));
 
   const button = el('button', 'btn', here ? 'Read this tab' : `Open ${provider.hostName}`);
@@ -264,6 +264,7 @@ function card(provider, record) {
   if (record && record.detectedAt) {
     const meta = [`Checked ${ago(record.detectedAt)}`];
     if (record.source === 'page') meta.push('read from the page');
+    else if (record.via === 'background') meta.push('read in the background');
     if (here) meta.push('this tab');
     section.append(el('p', 'card-foot', meta.join(' · ')));
   }
@@ -349,7 +350,7 @@ async function refresh(button, provider) {
   try {
     const result = await chrome.runtime.sendMessage({ type: 'usage:refresh', provider });
     if (!result || !result.ok) {
-      flash('Open claude.ai or chatgpt.com in a tab, then refresh.');
+      flash('Could not read either site. Sign in to claude.ai or chatgpt.com, then refresh.');
     } else {
       await new Promise((resolve) => setTimeout(resolve, 1200));
       await load();

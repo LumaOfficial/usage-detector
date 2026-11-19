@@ -1,17 +1,20 @@
 /* Usage Detector — stores what the content scripts report, keeps a short
    history, warns when a limit runs low, and paints the badge. */
 
-importScripts('settings.js', 'sites.js');
+importScripts('settings.js', 'sites.js', 'readers.js');
 
 const Sites = globalThis.UsageDetectorSites;
+const Readers = globalThis.UsageDetectorReaders;
 const PROVIDERS = Sites.IDS;
 const NAMES = Object.fromEntries(Sites.SITES.map((site) => [site.id, site.name]));
 
 const PATTERNS = Sites.patterns;
 
 const SCRIPTS = Object.fromEntries(
-  PROVIDERS.map((provider) => [provider, ['sites.js', 'content/common.js', `content/${provider}.js`]])
+  PROVIDERS.map((provider) => [provider, ['sites.js', 'readers.js', 'content/common.js', `content/${provider}.js`]])
 );
+
+const ALARM = 'usage-detector:poll';
 
 const HISTORY_MS = 7 * 24 * 60 * 60 * 1000;
 const HISTORY_MAX = 480;
@@ -37,6 +40,74 @@ function worstUsed(record) {
 function worstRemaining(record) {
   const used = worstUsed(record);
   return used == null ? null : Math.max(0, 100 - used);
+}
+
+/* Reads a site's own account API from here, with the cookies the browser
+   already holds for it — no tab needs to be open. */
+async function requestJson(url) {
+  const response = await fetch(url, {
+    credentials: 'include',
+    headers: { accept: 'application/json' },
+  });
+  if (response.status === 401 || response.status === 403) {
+    const error = new Error('signed-out');
+    error.code = response.status;
+    throw error;
+  }
+  if (!response.ok) {
+    const error = new Error(`http-${response.status}`);
+    error.code = response.status;
+    throw error;
+  }
+  return response.json();
+}
+
+async function readDirect(provider) {
+  const site = Sites.byId(provider);
+  const read = provider === 'claude' ? Readers.readClaude : Readers.readChatGPT;
+  let signedOut = false;
+
+  for (const host of site.hosts) {
+    try {
+      const result = await read((path) => requestJson(`https://${host}${path}`));
+      const windows = Array.isArray(result.windows) ? result.windows : [];
+      await saveReport(provider, {
+        status: windows.length ? Readers.statusFor(windows, 'ok') : 'unknown',
+        windows,
+        plan: result.plan || null,
+        notes: [...new Set((result.notes || []).filter(Boolean))].slice(0, 3),
+        source: windows.length ? 'api' : 'none',
+        via: 'background',
+        detectedAt: Date.now(),
+      });
+      return true;
+    } catch (error) {
+      if (error && (error.code === 401 || error.code === 403)) signedOut = true;
+    }
+  }
+
+  if (!signedOut) return false;
+
+  await saveReport(provider, {
+    status: 'signed-out',
+    windows: [],
+    plan: null,
+    notes: [`Sign in to ${site.hostName} to read your usage.`],
+    source: 'api',
+    via: 'background',
+    detectedAt: Date.now(),
+  });
+  return true;
+}
+
+async function pollSites() {
+  for (const provider of PROVIDERS) await readDirect(provider);
+}
+
+async function schedulePolling() {
+  const settings = await UsageDetectorSettings.get();
+  const minutes = Math.max(1, Math.round(settings.refreshMinutes));
+  await chrome.alarms.create(ALARM, { periodInMinutes: minutes, delayInMinutes: minutes });
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, respond) => {
@@ -72,6 +143,7 @@ async function saveReport(provider, payload) {
     windows: Array.isArray(payload.windows) ? payload.windows : [],
     notes: Array.isArray(payload.notes) ? payload.notes : [],
     source: payload.source || 'none',
+    via: payload.via || 'page',
     url: payload.url || (stored && stored.url) || null,
     detectedAt: payload.detectedAt || Date.now(),
   };
@@ -81,6 +153,7 @@ async function saveReport(provider, payload) {
     record.windows = stored.windows;
     record.status = stored.status;
     record.source = stored.source;
+    record.via = stored.via || record.via;
     record.notes = record.notes.length ? record.notes : stored.notes;
   }
 
@@ -210,7 +283,14 @@ async function refreshTabs(provider) {
     if (await pingTab(tab)) pinged += 1;
   }
 
-  return { ok: pinged > 0, tabs: pinged };
+  if (pinged > 0) return { ok: true, tabs: pinged };
+
+  /* No site tab is open — read the sites directly instead. */
+  let read = 0;
+  for (const name of targets) {
+    if (await readDirect(name)) read += 1;
+  }
+  return { ok: read > 0, tabs: 0 };
 }
 
 /* The toolbar tooltip names the site the detector sees in the active tab. */
@@ -238,15 +318,25 @@ chrome.tabs.onUpdated.addListener((_tabId, info, tab) => {
 
 chrome.runtime.onInstalled.addListener(async () => {
   await updateBadge();
+  await schedulePolling();
+  await pollSites();
   for (const tab of await matchingTabs(PROVIDERS.flatMap((name) => PATTERNS[name]))) {
     await injectInto(tab);
   }
 });
 
-chrome.runtime.onStartup.addListener(() => {
-  updateBadge();
+chrome.runtime.onStartup.addListener(async () => {
+  await schedulePolling();
+  await pollSites();
+  await updateBadge();
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === ALARM) pollSites().catch(() => {});
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.settings) updateBadge();
+  if (area !== 'local' || !changes.settings) return;
+  updateBadge();
+  schedulePolling().catch(() => {});
 });

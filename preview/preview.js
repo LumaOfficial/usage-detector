@@ -127,6 +127,7 @@
       item(Boolean(popup) && (await exists(`/extension/${popup}`)), 'Toolbar popup', popup || 'missing'),
       item(Boolean(optionsPage) && (await exists(`/extension/${optionsPage}`)), 'Settings page', optionsPage || 'missing'),
       item(permissions.includes('notifications'), 'Low-usage alerts', permissions.join(', ')),
+      item(permissions.includes('alarms'), 'Background refresh', permissions.includes('alarms') ? 'alarms' : 'missing'),
       item(hosts.length > 0, 'Site access', hosts.join(', ') || 'none'),
       item(
         scripts.length === 2,
@@ -136,6 +137,7 @@
           .join(' | ')
       ),
       item(await exists('/extension/sites.js'), 'Site detector', 'sites.js'),
+      item(await exists('/extension/readers.js'), 'Usage readers', 'readers.js'),
       item(
         icons.length > 0 &&
           (await Promise.all(icons.map((size) => exists(`/extension/${manifest.icons[size]}`)))).every(Boolean),

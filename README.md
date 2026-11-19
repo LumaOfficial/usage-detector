@@ -2,6 +2,7 @@
 
 A small Manifest V3 browser extension that shows how much of your **Claude** and
 **ChatGPT** usage limits you have left, without an account, an API key or a server.
+It reads both sites in the background, so no tab has to be open.
 
 Works in every Chromium browser — Chrome, Edge, Opera, Brave, Vivaldi, Arc.
 
@@ -19,6 +20,7 @@ keeps the countdown in your toolbar.
 
 - Detects whether the tab you are on is Claude or ChatGPT, names it in the panel
   and reads that tab on demand.
+- Reads both sites in the background — no Claude or ChatGPT tab needs to be open.
 - Reads the usage windows each site exposes for your plan — Claude's 5-hour
   session and weekly limits, ChatGPT's message caps — plus the reset countdown.
 - Falls back to the meters and limit banners already visible on the page when an
@@ -45,32 +47,35 @@ keeps the countdown in your toolbar.
 3. Click **Load unpacked** and select the `extension/` folder.
 4. Pin **Usage Detector** to the toolbar.
 
-Then open `claude.ai` and `chatgpt.com` once while signed in. The popup fills in
-after those tabs load, and refreshes on demand, when a tab becomes visible, and
-every five minutes.
+The panel fills in on its own within a minute of install, using the sign-in your
+browser already holds. It refreshes on the interval from the settings page (five
+minutes by default), on demand, and when a site tab becomes visible.
 
 ## How it reads usage
 
-A content script runs on `claude.ai` and `chatgpt.com` in the extension's isolated
-world. On each page it:
+A background alarm wakes the worker on your refresh interval and asks both sites
+for the same numbers their own settings screens show — with the cookies your
+browser already holds, so no tab has to be open. `extension/readers.js` parses
+whatever usage windows the responses contain.
+
+When a site tab is open, a content script adds what the page itself renders. On
+each page it:
 
 1. asks the site detector (`extension/sites.js`) whether this tab really is the
    site the script is for, and stops if it isn't;
-2. asks the site's own account endpoints (`/api/organizations/…/usage` on Claude,
-   `/backend-api/conversation_limit` and the account check on ChatGPT) with the
-   cookies the page already has;
-3. parses whatever usage windows the response contains;
-4. if that fails, reads the percentages, accessible progress bars and limit
+2. calls the same readers against the page's own endpoints;
+3. if that fails, reads the percentages, accessible progress bars and limit
    banners rendered on the page instead.
 
 The result is stored in `chrome.storage.local` and the badge is updated. Nothing
 is sent to any third party, and the extension has no build step — the files in
 `extension/` are what the browser loads.
 
-The `scripting` permission is used for one thing: when you install or update the
-extension, tabs that already have `claude.ai` or `chatgpt.com` open get the
-content script injected, so you don't have to reload those sites before the panel
-fills in.
+The `alarms` permission wakes the background worker on your refresh interval, so
+it can read the sites with no tab open. The `scripting` permission is used for
+one thing: when you install or update the extension, tabs that already have
+`claude.ai` or `chatgpt.com` open get the content script injected, so you don't
+have to reload those sites before the panel fills in.
 
 ## Layout
 
@@ -78,10 +83,11 @@ fills in.
 extension/
   manifest.json        MV3 manifest: permissions, content scripts, popup, options
   sites.js             site detector: which tab is Claude or ChatGPT
+  readers.js           account-API readers shared by the worker and the pages
   settings.js          alert threshold, refresh interval, badge focus, theme
   background.js        stores reports and history, alerts, paints the badge
   content/
-    common.js          shared parsing, page scanning, reporting
+    common.js          page scanning, reporting
     claude.js          Claude detection
     chatgpt.js         ChatGPT detection
   popup/
@@ -107,5 +113,6 @@ same empty panel you get before the extension has read a site.
   only show what the site itself renders.
 - API credit balances in Anthropic Console and OpenAI Platform are not covered —
   those need an API key, and this extension deliberately asks for none.
-- Numbers come from the tab that last reported them; a site you have not opened
-  since installing stays empty until you visit it.
+- Background reads rely on the sign-in cookies your browser holds for each site;
+  if a browser blocks them, opening the site still fills the panel from the page.
+- Numbers come from the last background read or the last tab that reported them.

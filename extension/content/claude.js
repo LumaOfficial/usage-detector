@@ -1,7 +1,8 @@
 /* Claude — reads claude.ai's own usage numbers while you're signed in. */
 (() => {
   const NS = globalThis.__usageDetector;
-  if (!NS) return;
+  const Readers = globalThis.UsageDetectorReaders;
+  if (!NS || !Readers) return;
 
   const PROVIDER = 'claude';
 
@@ -10,22 +11,7 @@
     return match ? match[1].toLowerCase() : null;
   };
 
-  const fetchUsage = async () => {
-    const orgs = await NS.fetchJson('/api/organizations');
-    const list = Array.isArray(orgs) ? orgs : Array.isArray(orgs && orgs.data) ? orgs.data : [];
-    const org = list.find((item) => item && typeof item.uuid === 'string');
-    if (!org) throw new Error('no-org');
-
-    const usage = await NS.fetchJson(`/api/organizations/${org.uuid}/usage`);
-    const windows = NS.extractWindows(usage);
-    const plan = NS.findValue(usage, ['plan_type', 'plan', 'tier']) ?? NS.findValue(org, ['plan_type', 'plan', 'tier']);
-
-    return {
-      windows,
-      plan: typeof plan === 'string' ? plan.toLowerCase() : null,
-      notes: windows.length ? [] : ['claude.ai returned no usage windows for this account.'],
-    };
-  };
+  const fetchUsage = () => Readers.readClaude(NS.fetchJson);
 
   const fromPage = () => {
     const text = NS.pageText();
