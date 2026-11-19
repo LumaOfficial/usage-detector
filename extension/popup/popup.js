@@ -2,15 +2,7 @@
    there is no sample data, so an empty panel means nothing has been read yet. */
 
 const Sites = globalThis.UsageDetectorSites;
-const MARKS = { claude: 'C', chatgpt: 'G' };
-const PROVIDERS = Sites.SITES.map((site) => ({
-  id: site.id,
-  name: site.name,
-  mark: MARKS[site.id] || site.name.slice(0, 1),
-  host: site.host,
-  hostName: site.hostName,
-}));
-
+const settingsStore = globalThis.UsageDetectorSettings;
 const isExtension = typeof chrome !== 'undefined' && Boolean(chrome.runtime && chrome.runtime.id);
 
 const MINUTE = 60000;
@@ -18,17 +10,13 @@ const HOUR = 3600000;
 const DAY = 86400000;
 const HISTORY_DAYS = 7;
 
-const state = { claude: null, chatgpt: null, history: { claude: [], chatgpt: [] }, active: null };
-let tabChecked = false;
+const state = { records: {}, history: {}, active: null, showAll: false };
+const expanded = new Set();
 
-const settingsStore = globalThis.UsageDetectorSettings;
-let settings = (settingsStore && settingsStore.DEFAULTS) || {
-  alertThreshold: 15,
-  refreshMinutes: 5,
-  badgeMode: 'worst',
-  theme: 'auto',
-};
+let tabChecked = false;
 let flashTimer = null;
+
+let settings = { ...(settingsStore ? settingsStore.DEFAULTS : {}), enabledSites: null };
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -36,6 +24,11 @@ const el = (tag, className, text) => {
   if (text != null) node.textContent = text;
   return node;
 };
+
+function enabledProviders() {
+  const enabled = Array.isArray(settings.enabledSites) ? settings.enabledSites : Sites.IDS;
+  return Sites.SITES.filter((site) => enabled.includes(site.id));
+}
 
 function ago(timestamp) {
   const diff = Math.max(0, Date.now() - timestamp);
@@ -114,16 +107,16 @@ function renderDetect() {
     return;
   }
 
-  text.textContent = active ? `On ${active.hostname}` : 'Not on Claude or ChatGPT';
+  text.textContent = active ? `On ${active.hostname}` : 'Not on a supported AI site';
   if (active) action.dataset.refreshSite = active.id;
   else delete action.dataset.refreshSite;
 }
 
-/* The single limit closest to running out, across both providers. */
+/* The single limit closest to running out, across every tracked site. */
 function tightest() {
   let best = null;
-  for (const provider of PROVIDERS) {
-    const record = state[provider.id];
+  for (const provider of enabledProviders()) {
+    const record = state.records[provider.id];
     for (const win of (record && record.windows) || []) {
       if (typeof win.remainingPercent !== 'number') continue;
       if (!best || win.remainingPercent < best.remaining) {
@@ -152,12 +145,16 @@ function renderOverview() {
     const limited = best.record.status === 'limited';
     const tone = limited || best.remaining <= 0 ? 'bad' : best.remaining <= settings.alertThreshold ? 'warn' : 'ok';
 
-    head.append(el('span', `ov-state ov-state--${tone}`, tone === 'bad' ? 'At the limit' : tone === 'warn' ? 'Running low' : 'Comfortable'));
+    head.append(
+      el('span', `ov-state ov-state--${tone}`, tone === 'bad' ? 'At the limit' : tone === 'warn' ? 'Running low' : 'Comfortable')
+    );
     main.append(el('span', 'ov-value', `${left}`), el('span', 'ov-unit', '% left'));
     box.append(head, main);
 
     const sub = el('p', 'ov-sub');
-    sub.append(el('span', `ov-mark ov-mark--${best.provider.id}`, best.provider.mark));
+    const mark = el('span', 'ov-mark', best.provider.mark);
+    mark.style.background = `linear-gradient(140deg, ${best.provider.accent}, rgba(255, 255, 255, 0.72))`;
+    sub.append(mark);
     sub.append(el('span', null, `${best.provider.name} · ${best.win.label || 'Usage'}`));
     box.append(sub);
 
@@ -172,7 +169,9 @@ function renderOverview() {
     if (best.record.detectedAt) foot.push(`checked ${ago(best.record.detectedAt)}`);
     if (foot.length) box.append(el('p', 'ov-foot', foot.join(' · ')));
   } else {
-    const signedOut = PROVIDERS.find((provider) => state[provider.id] && state[provider.id].status === 'signed-out');
+    const signedOut = enabledProviders().find(
+      (provider) => state.records[provider.id] && state.records[provider.id].status === 'signed-out'
+    );
     head.append(el('span', 'ov-state', signedOut ? 'Signed out' : 'Waiting'));
     main.append(el('span', 'ov-value ov-value--idle', '—'), el('span', 'ov-unit', '% left'));
     box.append(head, main);
@@ -182,7 +181,7 @@ function renderOverview() {
         'ov-sub',
         signedOut
           ? `Sign in to ${signedOut.hostName} to start counting.`
-          : 'No reads yet — the extension checks both sites in the background and fills this in on its own.'
+          : 'No reads yet — the extension checks your sites in the background and fills this in on its own.'
       )
     );
   }
@@ -214,9 +213,8 @@ function pill(record) {
 }
 
 function planLine(record) {
-  if (!record) return 'No data yet';
-  if (record.status === 'signed-out') return 'Signed out';
-  return record.plan ? `${record.plan} plan` : 'Plan unknown';
+  if (!record || record.status === 'signed-out') return null;
+  return record.plan ? `${record.plan} plan` : null;
 }
 
 function windowRow(window) {
@@ -293,7 +291,8 @@ function emptyBlock(provider, record) {
   if (signedOut) text = `Sign in to ${provider.hostName} to start counting.`;
   else if (note) text = note;
   else if (here) text = `You're on ${provider.hostName} — this fills in as soon as the page reports.`;
-  else text = 'Waiting for the first read.';
+  else if (provider.hasApi) text = 'Waiting for the first background read.';
+  else text = `Open ${provider.hostName} in a tab to read its meters.`;
   wrap.append(el('p', 'empty-text', text));
 
   const button = el('button', 'btn', here ? 'Read this tab' : `Open ${provider.hostName}`);
@@ -304,59 +303,137 @@ function emptyBlock(provider, record) {
   return wrap;
 }
 
-function card(provider, record) {
-  const section = el('section', `card card--${provider.id}`);
-  const here = Boolean(state.active && state.active.id === provider.id);
-  if (here) section.classList.add('is-current');
-
-  const head = el('div', 'card-head');
-  head.append(el('span', 'mark', provider.mark));
-
-  const who = el('div', 'who');
-  who.append(el('h2', null, provider.name));
-  who.append(el('p', 'plan', planLine(record)));
-  head.append(who, pill(record));
-  section.append(head);
+function detail(provider, record) {
+  const wrap = el('div', 'pdetail');
 
   if (record && record.windows && record.windows.length) {
     const list = el('div', 'windows');
-    for (const window of record.windows.slice(0, 3)) list.append(windowRow(window));
-    section.append(list);
+    for (const window of record.windows.slice(0, 4)) list.append(windowRow(window));
+    wrap.append(list);
 
     const note = record.notes && record.notes[0];
-    if (note) section.append(el('p', 'note', note));
+    if (note) wrap.append(el('p', 'note', note));
   } else {
-    section.append(emptyBlock(provider, record));
+    wrap.append(emptyBlock(provider, record));
   }
 
-  const points = (state.history && state.history[provider.id]) || [];
-  if (points.length > 1) section.append(trendChart(points));
+  const points = state.history[provider.id] || [];
+  if (settings.showHistory && points.length > 1) wrap.append(trendChart(points));
 
   if (record && record.detectedAt) {
     const meta = [`Checked ${ago(record.detectedAt)}`];
     if (record.source === 'page') meta.push('read from the page');
     else if (record.via === 'background') meta.push('read in the background');
-    if (here) meta.push('this tab');
-    section.append(el('p', 'card-foot', meta.join(' · ')));
+    if (state.active && state.active.id === provider.id) meta.push('this tab');
+    wrap.append(el('p', 'card-foot', meta.join(' · ')));
   }
 
+  return wrap;
+}
+
+function providerRow(provider) {
+  const record = state.records[provider.id] || null;
+  const here = Boolean(state.active && state.active.id === provider.id);
+  const open = expanded.has(provider.id);
+
+  const section = el('section', `provider${here ? ' is-current' : ''}${open ? ' is-open' : ''}`);
+  section.style.setProperty('--accent', provider.accent);
+  section.dataset.provider = provider.id;
+
+  const row = el('button', 'prow');
+  row.type = 'button';
+  row.dataset.toggle = provider.id;
+  row.setAttribute('aria-expanded', String(open));
+
+  row.append(el('span', 'pmark', provider.mark));
+
+  const main = el('span', 'pmain');
+  const name = el('span', 'pname');
+  name.append(el('span', null, provider.name));
+  const plan = planLine(record);
+  if (plan) name.append(el('span', 'pplan', plan));
+  main.append(name);
+
+  const remaining = worstRemaining(record);
+  if (remaining != null) {
+    const bar = el('span', 'pbar');
+    const fill = el('i', severity(100 - remaining));
+    fill.style.width = `${Math.min(100, Math.max(0, remaining))}%`;
+    bar.append(fill);
+    main.append(bar);
+  }
+
+  row.append(main, pill(record), el('span', 'chev', '›'));
+  section.append(row);
+
+  if (open) section.append(detail(provider, record));
   return section;
 }
 
+function renderList() {
+  const root = document.getElementById('providers');
+  if (!root) return;
+  root.textContent = '';
+
+  const providers = enabledProviders();
+  const activeId = state.active && state.active.id;
+
+  const visible = providers.filter((provider) => state.records[provider.id] || provider.id === activeId);
+  const primary = visible.length ? visible : providers;
+  const rest = providers.filter((provider) => !primary.includes(provider));
+
+  for (const provider of primary) root.append(providerRow(provider));
+
+  if (rest.length) {
+    const more = el(
+      'button',
+      'more',
+      state.showAll ? `Hide ${rest.length} other site${rest.length === 1 ? '' : 's'}` : `Show ${rest.length} more site${rest.length === 1 ? '' : 's'}`
+    );
+    more.type = 'button';
+    more.dataset.more = '1';
+    root.append(more);
+
+    if (state.showAll) for (const provider of rest) root.append(providerRow(provider));
+  }
+}
+
+function renderFoot() {
+  const text = document.getElementById('foot-text');
+  const button = document.getElementById('open-active');
+  if (!text || !button) return;
+
+  const providers = enabledProviders();
+  const withNumbers = providers.filter((provider) => {
+    const record = state.records[provider.id];
+    return Boolean(record && record.windows && record.windows.length);
+  });
+
+  text.textContent = withNumbers.length
+    ? `${withNumbers.length} of ${providers.length} sites with numbers`
+    : `${providers.length} AI sites tracked`;
+
+  const active = state.active;
+  button.hidden = !active;
+  if (active) {
+    button.dataset.open = active.id;
+    button.textContent = `Open ${active.hostName}`;
+  }
+}
+
 function subtitle() {
-  const stamps = PROVIDERS.map((provider) => state[provider.id] && state[provider.id].detectedAt).filter(Boolean);
-  if (!stamps.length) return 'Claude & ChatGPT limits';
+  const stamps = enabledProviders()
+    .map((provider) => state.records[provider.id] && state.records[provider.id].detectedAt)
+    .filter(Boolean);
+  if (!stamps.length) return `${enabledProviders().length} AI sites tracked`;
   return `Updated ${ago(Math.max(...stamps))}`;
 }
 
 function render() {
   renderDetect();
   renderOverview();
-
-  const root = document.getElementById('providers');
-  if (!root) return;
-  root.textContent = '';
-  for (const provider of PROVIDERS) root.append(card(provider, state[provider.id]));
+  renderList();
+  renderFoot();
 
   const line = document.getElementById('subtitle');
   if (line) line.textContent = subtitle();
@@ -386,11 +463,12 @@ async function load() {
     return;
   }
 
-  const keys = PROVIDERS.flatMap((provider) => [`usage:${provider.id}`, `history:${provider.id}`]);
+  const providers = enabledProviders();
+  const keys = providers.flatMap((provider) => [`usage:${provider.id}`, `history:${provider.id}`]);
   const stored = await chrome.storage.local.get(keys);
 
-  for (const provider of PROVIDERS) {
-    state[provider.id] = stored[`usage:${provider.id}`] || null;
+  for (const provider of providers) {
+    state.records[provider.id] = stored[`usage:${provider.id}`] || null;
     const history = stored[`history:${provider.id}`];
     state.history[provider.id] = Array.isArray(history) ? history : [];
   }
@@ -401,8 +479,8 @@ async function load() {
 /* Opening the popup while a site tab is open should show numbers right away. */
 async function refreshIfEmpty() {
   const target = state.active ? state.active.id : null;
-  if (target && state[target]) return;
-  if (PROVIDERS.every((provider) => state[provider.id])) return;
+  if (target && state.records[target]) return;
+  if (enabledProviders().every((provider) => state.records[provider.id])) return;
   try {
     await chrome.runtime.sendMessage({ type: 'usage:refresh', provider: target || undefined });
   } catch (_) {
@@ -414,7 +492,7 @@ async function refreshIfEmpty() {
 
 async function refresh(button, provider) {
   if (!isExtension) {
-    flash('Install the extension to read usage from claude.ai and chatgpt.com.');
+    flash('Install the extension to read usage from your AI sites.');
     return;
   }
 
@@ -422,7 +500,7 @@ async function refresh(button, provider) {
   try {
     const result = await chrome.runtime.sendMessage({ type: 'usage:refresh', provider });
     if (!result || !result.ok) {
-      flash('Could not read either site. Sign in to claude.ai or chatgpt.com, then refresh.');
+      flash('No tab open for that site yet — open it, sign in, then refresh.');
     } else {
       await new Promise((resolve) => setTimeout(resolve, 1200));
       await load();
@@ -437,9 +515,25 @@ document.addEventListener('click', (event) => {
   const target = event.target;
   if (!(target instanceof Element)) return;
 
+  const toggler = target.closest('[data-toggle]');
+  if (toggler) {
+    const id = toggler.dataset.toggle;
+    if (expanded.has(id)) expanded.delete(id);
+    else expanded.add(id);
+    render();
+    return;
+  }
+
+  const more = target.closest('[data-more]');
+  if (more) {
+    state.showAll = !state.showAll;
+    render();
+    return;
+  }
+
   const opener = target.closest('[data-open]');
   if (opener) {
-    const provider = PROVIDERS.find((item) => item.id === opener.dataset.open);
+    const provider = Sites.byId(opener.dataset.open);
     if (!provider) return;
     if (isExtension) chrome.tabs.create({ url: provider.host });
     else window.open(provider.host, '_blank', 'noopener');

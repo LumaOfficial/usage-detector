@@ -1,17 +1,26 @@
 /* Usage Detector — stores what the content scripts report, keeps a short
    history, warns when a limit runs low, and paints the badge. */
 
-importScripts('settings.js', 'sites.js', 'readers.js');
+importScripts('sites.js', 'settings.js', 'readers.js');
 
 const Sites = globalThis.UsageDetectorSites;
 const Readers = globalThis.UsageDetectorReaders;
+const Settings = globalThis.UsageDetectorSettings;
 const PROVIDERS = Sites.IDS;
 const NAMES = Object.fromEntries(Sites.SITES.map((site) => [site.id, site.name]));
 
 const PATTERNS = Sites.patterns;
 
+/* Claude and ChatGPT answer their own account APIs, so the worker can read
+   them with no tab open. Every other site is read by its content script. */
+const API_READERS = {
+  claude: Readers.readClaude,
+  chatgpt: Readers.readChatGPT,
+};
+
+const BASE_SCRIPTS = ['sites.js', 'settings.js', 'readers.js', 'content/common.js', 'content/overlay.js'];
 const SCRIPTS = Object.fromEntries(
-  PROVIDERS.map((provider) => [provider, ['sites.js', 'readers.js', 'content/common.js', `content/${provider}.js`]])
+  Sites.SITES.map((site) => [site.id, [...BASE_SCRIPTS, site.hasApi ? `content/${site.id}.js` : 'content/generic.js']])
 );
 
 const ALARM = 'usage-detector:poll';
@@ -42,6 +51,12 @@ function worstRemaining(record) {
   return used == null ? null : Math.max(0, 100 - used);
 }
 
+/* The sites the settings page keeps switched on. */
+async function enabledProviders() {
+  const settings = await Settings.get();
+  return settings.enabledSites.filter((id) => PROVIDERS.includes(id));
+}
+
 /* Reads a site's own account API from here, with the cookies the browser
    already holds for it — no tab needs to be open. */
 async function requestJson(url) {
@@ -63,8 +78,10 @@ async function requestJson(url) {
 }
 
 async function readDirect(provider) {
+  const read = API_READERS[provider];
+  if (!read) return false;
+
   const site = Sites.byId(provider);
-  const read = provider === 'claude' ? Readers.readClaude : Readers.readChatGPT;
   let signedOut = false;
 
   for (const host of site.hosts) {
@@ -101,11 +118,11 @@ async function readDirect(provider) {
 }
 
 async function pollSites() {
-  for (const provider of PROVIDERS) await readDirect(provider);
+  for (const provider of await enabledProviders()) await readDirect(provider);
 }
 
 async function schedulePolling() {
-  const settings = await UsageDetectorSettings.get();
+  const settings = await Settings.get();
   const minutes = Math.max(1, Math.round(settings.refreshMinutes));
   await chrome.alarms.create(ALARM, { periodInMinutes: minutes, delayInMinutes: minutes });
 }
@@ -184,7 +201,9 @@ async function recordHistory(provider, record) {
 
 /* One notification per slide below the threshold; re-armed once it recovers. */
 async function checkAlert(provider, record) {
-  const settings = await UsageDetectorSettings.get();
+  const settings = await Settings.get();
+  if (!settings.notifications) return;
+
   const remaining = worstRemaining(record);
   const key = alertKey(provider);
   const stored = (await chrome.storage.local.get(key))[key] || null;
@@ -209,12 +228,13 @@ async function checkAlert(provider, record) {
 }
 
 async function updateBadge() {
-  const settings = await UsageDetectorSettings.get();
-  const providers = settings.badgeMode === 'worst' ? PROVIDERS : [settings.badgeMode];
-  const stored = await chrome.storage.local.get(providers.map(keyFor));
+  const settings = await Settings.get();
+  const enabled = settings.enabledSites.filter((id) => PROVIDERS.includes(id));
+  const focus = settings.badgeMode !== 'worst' && enabled.includes(settings.badgeMode) ? [settings.badgeMode] : enabled;
+  const stored = await chrome.storage.local.get(focus.map(keyFor));
 
   let remaining = null;
-  for (const provider of providers) {
+  for (const provider of focus) {
     const record = stored[keyFor(provider)];
     if (!record || !Array.isArray(record.windows)) continue;
     for (const window of record.windows) {
@@ -275,7 +295,10 @@ async function matchingTabs(patterns) {
 }
 
 async function refreshTabs(provider) {
-  const targets = provider ? [provider] : PROVIDERS;
+  const enabled = await enabledProviders();
+  const targets = provider ? [provider].filter((id) => enabled.includes(id)) : enabled;
+  if (!targets.length) return { ok: false, tabs: 0 };
+
   const patterns = targets.flatMap((name) => PATTERNS[name] || []);
 
   let pinged = 0;
@@ -285,7 +308,7 @@ async function refreshTabs(provider) {
 
   if (pinged > 0) return { ok: true, tabs: pinged };
 
-  /* No site tab is open — read the sites directly instead. */
+  /* No site tab is open — read the sites that answer an account API directly. */
   let read = 0;
   for (const name of targets) {
     if (await readDirect(name)) read += 1;
@@ -320,7 +343,8 @@ chrome.runtime.onInstalled.addListener(async () => {
   await updateBadge();
   await schedulePolling();
   await pollSites();
-  for (const tab of await matchingTabs(PROVIDERS.flatMap((name) => PATTERNS[name]))) {
+  const enabled = await enabledProviders();
+  for (const tab of await matchingTabs(enabled.flatMap((name) => PATTERNS[name]))) {
     await injectInto(tab);
   }
 });

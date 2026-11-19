@@ -12,7 +12,7 @@
     <span class="logo" aria-hidden="true"><i></i><i></i></span>
     <div class="brand-text">
       <h1>Usage Detector</h1>
-      <p id="subtitle">Claude &amp; ChatGPT limits</p>
+      <p id="subtitle">AI limits</p>
     </div>
   </div>
   <div class="head-actions">
@@ -41,12 +41,11 @@
 
 <main id="providers" class="providers" aria-live="polite"></main>
 
-<p class="why">Claude and ChatGPT both call your remaining usage “up to our discretion”. This panel counts what they actually give you.</p>
+<p class="why">Every AI site calls your remaining usage “up to our discretion”. This panel counts what they actually give you.</p>
 
 <footer class="foot">
-  <button class="link" type="button" data-open="claude">Open claude.ai</button>
-  <span class="dot" aria-hidden="true"></span>
-  <button class="link" type="button" data-open="chatgpt">Open chatgpt.com</button>
+  <span id="foot-text" class="foot-text">Tracking your AI sites</span>
+  <button id="open-active" class="link" type="button" hidden>Open site</button>
 </footer>
 
 <script src="../sites.js"></script>

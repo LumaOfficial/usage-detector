@@ -98,7 +98,7 @@
   NS.detect = async ({ provider, api, page }) => {
     let apiResult = null;
     try {
-      apiResult = await api();
+      apiResult = api ? await api() : { windows: [], notes: [], plan: null };
     } catch (error) {
       if (error && (error.code === 401 || error.code === 403)) {
         NS.send(provider, {
@@ -133,6 +133,73 @@
       url: location.href,
       detectedAt: Date.now(),
     });
+  };
+
+  /* What the page itself says about usage, for the sites without an account
+     API: accessible meters, "42% used" copy, "3 of 20 messages" counters and
+     limit banners. */
+  NS.genericPage = () => {
+    const text = NS.pageText();
+    const windows = NS.progressBars();
+    const notes = [];
+    const resetsAt = NS.resetFromText(text);
+
+    const percentLine = /([^\n]{0,40}?)(\d{1,3}(?:\.\d+)?)\s*%\s*(?:used|of (?:your )?(?:limit|usage|quota))/i.exec(text);
+    if (percentLine) {
+      const used = NS.clamp(Number(percentLine[2]), 0, 100);
+      windows.unshift({
+        id: 'page-usage',
+        label: percentLine[1].trim().slice(0, 40) || 'Usage',
+        usedPercent: NS.round1(used),
+        remainingPercent: NS.round1(100 - used),
+        resetsAt,
+      });
+    }
+
+    const pair = /(\d{1,4})\s*(?:of|\/)\s*(\d{1,4})\s+(?:messages|prompts|credits|requests|queries|generations)/i.exec(text);
+    if (pair) {
+      const usedCount = Number(pair[1]);
+      const limit = Number(pair[2]);
+      if (limit > 0 && usedCount <= limit) {
+        const used = NS.round1(NS.clamp((usedCount / limit) * 100, 0, 100));
+        windows.unshift({
+          id: 'page-quota',
+          label: 'Quota',
+          usedPercent: used,
+          remainingPercent: NS.round1(100 - used),
+          resetsAt,
+        });
+      }
+    }
+
+    const left = /(\d{1,4})\s+(?:messages|prompts|credits|requests|queries|generations)\s+(?:left|remaining)/i.exec(text);
+    if (left && !windows.length) {
+      windows.push({
+        id: 'page-left',
+        label: 'Left',
+        usedPercent: null,
+        remainingPercent: null,
+        detail: `${left[1]} left`,
+        resetsAt,
+      });
+    }
+
+    const limited =
+      /(?:reached|hit)\s+(?:your|the)\s+[^\n.]{0,32}?(?:limit|cap)|limit reached|out of (?:messages|credits|prompts)/i.test(
+        text
+      );
+    if (limited && !windows.some((window) => window.usedPercent === 100)) {
+      windows.unshift({
+        id: 'page-limit',
+        label: 'Limit',
+        usedPercent: 100,
+        remainingPercent: 0,
+        resetsAt,
+      });
+    }
+
+    if (!windows.length) notes.push('Open a chat and send a message, then refresh.');
+    return { windows, notes, plan: null };
   };
 
   /* Starts page detection once per provider, even when the script is injected twice. */

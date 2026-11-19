@@ -1,15 +1,24 @@
-/* Usage Detector — settings shared by the popup, the options page and the
-   background worker. Inside the extension they live in chrome.storage.local;
-   the preview page has no extension APIs, so they fall back to localStorage. */
+/* Usage Detector — settings shared by the popup, the options page, the content
+   scripts and the background worker. Inside the extension they live in
+   chrome.storage.local; the preview page has no extension APIs, so they fall
+   back to localStorage. Load sites.js first: the tracked-site list is checked
+   against it. */
 (() => {
   const DEFAULTS = {
     alertThreshold: 15,
+    notifications: true,
     refreshMinutes: 5,
     badgeMode: 'worst',
     theme: 'auto',
+    enabledSites: null,
+    showHistory: true,
+    overlayEnabled: true,
+    overlayPosition: 'bottom-right',
+    overlayCompact: false,
   };
 
   const KEY = 'settings';
+  const POSITIONS = ['bottom-right', 'bottom-left', 'top-right', 'top-left'];
 
   const clampNumber = (value, min, max, fallback) => {
     const parsed = Number(value);
@@ -17,13 +26,34 @@
     return Math.min(max, Math.max(min, Math.round(parsed)));
   };
 
+  const bool = (value, fallback) => (typeof value === 'boolean' ? value : fallback);
+
+  const siteIds = () => (globalThis.UsageDetectorSites ? globalThis.UsageDetectorSites.IDS : []);
+
+  /* At least one site always stays on — an empty list would turn everything off. */
+  const cleanSites = (value) => {
+    const ids = siteIds();
+    const list = Array.isArray(value) ? value.filter((id) => typeof id === 'string') : [];
+    if (!ids.length) return list;
+    const kept = ids.filter((id) => list.includes(id));
+    return kept.length ? kept : ids.slice();
+  };
+
   const clean = (value) => {
     const raw = value && typeof value === 'object' ? value : {};
+    const ids = siteIds();
+    const badge = typeof raw.badgeMode === 'string' ? raw.badgeMode : '';
     return {
       alertThreshold: clampNumber(raw.alertThreshold, 1, 50, DEFAULTS.alertThreshold),
+      notifications: bool(raw.notifications, DEFAULTS.notifications),
       refreshMinutes: clampNumber(raw.refreshMinutes, 1, 60, DEFAULTS.refreshMinutes),
-      badgeMode: ['worst', 'claude', 'chatgpt'].includes(raw.badgeMode) ? raw.badgeMode : DEFAULTS.badgeMode,
+      badgeMode: badge === 'worst' || ids.includes(badge) ? badge : DEFAULTS.badgeMode,
       theme: ['auto', 'light', 'dark'].includes(raw.theme) ? raw.theme : DEFAULTS.theme,
+      enabledSites: cleanSites(raw.enabledSites),
+      showHistory: bool(raw.showHistory, DEFAULTS.showHistory),
+      overlayEnabled: bool(raw.overlayEnabled, DEFAULTS.overlayEnabled),
+      overlayPosition: POSITIONS.includes(raw.overlayPosition) ? raw.overlayPosition : DEFAULTS.overlayPosition,
+      overlayCompact: bool(raw.overlayCompact, DEFAULTS.overlayCompact),
     };
   };
 
@@ -50,5 +80,5 @@
     return next;
   };
 
-  globalThis.UsageDetectorSettings = { DEFAULTS, KEY, clean, get, save };
+  globalThis.UsageDetectorSettings = { DEFAULTS, KEY, POSITIONS, clean, get, save };
 })();

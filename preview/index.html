@@ -9,6 +9,10 @@
 </head>
 <body>
 <main class="shell">
+  <nav class="tabs" role="tablist" aria-label="Extension pages">
+    <button class="tab is-on" type="button" role="tab" aria-selected="true" data-view="panel" data-src="/extension/popup/popup.html">Panel</button>
+    <button class="tab" type="button" role="tab" aria-selected="false" data-view="settings" data-src="/extension/options/options.html">Settings</button>
+  </nav>
   <iframe id="stage-frame" src="/extension/popup/popup.html" title="Usage Detector panel"></iframe>
 </main>
 <script src="/preview/preview.js"></script>

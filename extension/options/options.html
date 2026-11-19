@@ -12,7 +12,7 @@
     <span class="logo" aria-hidden="true"><i></i><i></i></span>
     <div class="head-text">
       <h1>Settings</h1>
-      <p>Usage Detector — Claude &amp; ChatGPT</p>
+      <p>Usage Detector — every AI you use</p>
     </div>
     <span class="saved" id="saved" aria-live="polite"></span>
   </header>
@@ -33,8 +33,18 @@
 
     <div class="row">
       <div class="row-text">
+        <label class="row-title" for="notifications">Desktop notifications</label>
+        <span class="row-hint">Off keeps the panel and the badge, but never pops a notification.</span>
+      </div>
+      <div class="control">
+        <input id="notifications" name="notifications" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
         <label class="row-title" for="refreshMinutes">Refresh interval</label>
-        <span class="row-hint">How often an open Claude or ChatGPT tab reports again.</span>
+        <span class="row-hint">How often the extension checks your sites, tab open or not.</span>
       </div>
       <div class="control">
         <select id="refreshMinutes" name="refreshMinutes">
@@ -54,18 +64,14 @@
         <span class="row-hint">Which limit the percentage on the toolbar icon follows.</span>
       </div>
       <div class="control">
-        <select id="badgeMode" name="badgeMode">
-          <option value="worst">Tightest limit</option>
-          <option value="claude">Claude only</option>
-          <option value="chatgpt">ChatGPT only</option>
-        </select>
+        <select id="badgeMode" name="badgeMode"></select>
       </div>
     </div>
 
     <div class="row">
       <div class="row-text">
         <label class="row-title" for="theme">Panel theme</label>
-        <span class="row-hint">How the popup and this page look.</span>
+        <span class="row-hint">How the popup, this page and the on-page widget look.</span>
       </div>
       <div class="control">
         <select id="theme" name="theme">
@@ -75,11 +81,61 @@
         </select>
       </div>
     </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="showHistory">Seven-day trend</label>
+        <span class="row-hint">Draw the sparkline of your tightest limit in each site's details.</span>
+      </div>
+      <div class="control">
+        <input id="showHistory" name="showHistory" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="overlayEnabled">Widget on the AI sites</label>
+        <span class="row-hint">Draw a small usage widget in the corner of the sites themselves.</span>
+      </div>
+      <div class="control">
+        <input id="overlayEnabled" name="overlayEnabled" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="overlayPositionRow">
+      <div class="row-text">
+        <label class="row-title" for="overlayPosition">Widget corner</label>
+        <span class="row-hint">Where the widget sits on the page.</span>
+      </div>
+      <div class="control">
+        <select id="overlayPosition" name="overlayPosition">
+          <option value="bottom-right">Bottom right</option>
+          <option value="bottom-left">Bottom left</option>
+          <option value="top-right">Top right</option>
+          <option value="top-left">Top left</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row" id="overlayCompactRow">
+      <div class="row-text">
+        <label class="row-title" for="overlayCompact">Start the widget collapsed</label>
+        <span class="row-hint">Show only the percentage until you click it open.</span>
+      </div>
+      <div class="control">
+        <input id="overlayCompact" name="overlayCompact" class="switch" type="checkbox">
+      </div>
+    </div>
   </form>
+
+  <h2 class="group-title">Sites to track</h2>
+  <p class="group-hint">The panel, the badge and the on-page widget only count the sites you keep on.</p>
+  <div class="sites" id="sites"></div>
 
   <p class="foot">Settings are stored in your browser. The extension sends nothing anywhere.</p>
 </main>
 
+<script src="../sites.js"></script>
 <script src="../settings.js"></script>
 <script src="options.js"></script>
 </body>
