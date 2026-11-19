@@ -154,6 +154,10 @@ extension/
 preview/               standalone page that shows the real panel and settings
                        page at their natural size, so they can be seen without
                        loading the extension
+tests/
+  readers.test.js      parsing tests for every supported provider
+  fixtures/providers.js  the page copy and meters each provider shows
+  support/extension.js   loads the shared scripts into an isolated VM
 ```
 
 History is kept per provider under `history:<provider>` as `{ t, used }` points,
@@ -163,6 +167,20 @@ pruned to the history length setting (seven days by default).
 browser tab; it is not part of the extension. It ships no sample numbers — an
 empty panel there is the same empty panel you get before the extension has read a
 site.
+
+## Tests
+
+`tests/` exercises the shared parsing engine — the account-API payload reader,
+the progress-bar reader and the page-copy reader — against a fixture for each of
+the fifty-one supported providers. It has no dependencies and needs Node 22:
+
+```
+node --test tests/readers.test.js
+```
+
+Each fixture is the copy and the meters that provider actually renders, so a
+change to `readers.js` or `content/common.js` that breaks one of them fails by
+provider name.
 
 ## Limits worth knowing
 
