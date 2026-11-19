@@ -171,14 +171,23 @@
     const windows = NS.pageMeters();
     const notes = [];
 
-    /* A meter and a "25% used" line describe the same limit — keep one. */
-    const generic = new Set(['Used', 'Usage', 'Remaining']);
+    /* A meter and a "25% used" line describe the same limit — keep one.
+       "Generations" and "Generations used" are the same label once the
+       wording around the number is dropped. */
+    const core = (label) =>
+      String(label || '')
+        .toLowerCase()
+        .replace(/\b(used|usage|left|remaining|available)\b/g, ' ')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+
     for (const window of Readers.windowsFromText(text, resetsAt)) {
-      const duplicate = windows.some(
-        (existing) =>
-          (existing.label === window.label && existing.usedPercent === window.usedPercent) ||
-          (generic.has(window.label) && existing.usedPercent === window.usedPercent)
-      );
+      const key = core(window.label);
+      const duplicate = windows.some((existing) => {
+        if (existing.usedPercent !== window.usedPercent) return false;
+        const other = core(existing.label);
+        return !key || !other || key === other || key.includes(other) || other.includes(key);
+      });
       if (!duplicate) windows.push(window);
     }
 
