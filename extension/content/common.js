@@ -73,16 +73,39 @@
     return null;
   };
 
-  /* Visible meters a site renders as accessible progress bars. */
-  NS.progressBars = () => {
+  /* Every meter a site draws: accessible progress bars and meters, native
+     <progress>/<meter> elements, and any element that exposes aria-valuenow. */
+  const meterPercent = (node) => {
+    let now = NS.number(node.getAttribute('aria-valuenow'));
+    let max = NS.number(node.getAttribute('aria-valuemax'));
+    if (now == null && 'value' in node) now = NS.number(node.value);
+    if (max == null && 'max' in node) max = NS.number(node.max);
+    if (now == null || now < 0) return null;
+    if (!max || max <= 0) max = 100;
+    return NS.clamp((now / max) * 100, 0, 100);
+  };
+
+  NS.pageMeters = () => {
     const out = [];
-    for (const node of document.querySelectorAll('[role="progressbar"]')) {
-      const now = NS.number(node.getAttribute('aria-valuenow'));
-      if (now == null) continue;
-      const max = NS.number(node.getAttribute('aria-valuemax'));
-      const used = max && max !== 100 ? (now / max) * 100 : now;
-      const label = (node.getAttribute('aria-label') || nearbyLabel(node) || 'Usage').slice(0, 48);
-      const usedPercent = NS.round1(NS.clamp(used, 0, 100));
+    const seen = new Set();
+    const nodes = document.querySelectorAll('[role="progressbar"], [role="meter"], progress, meter, [aria-valuenow]');
+    for (const node of nodes) {
+      const used = meterPercent(node);
+      if (used == null) continue;
+      const labelledBy = node.getAttribute('aria-labelledby');
+      const labelled = labelledBy ? document.getElementById(labelledBy) : null;
+      const label = (
+        node.getAttribute('aria-label') ||
+        (labelled && labelled.textContent) ||
+        nearbyLabel(node) ||
+        'Usage'
+      )
+        .trim()
+        .slice(0, 48);
+      const usedPercent = NS.round1(used);
+      const key = `${label}|${usedPercent}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
       out.push({
         id: `bar-${out.length}`,
         label,
@@ -100,7 +123,10 @@
     try {
       apiResult = api ? await api() : { windows: [], notes: [], plan: null };
     } catch (error) {
-      if (error && (error.code === 401 || error.code === 403)) {
+      /* Only a 401 proves you are signed out. A 403 usually means the route
+         wants a header this extension cannot send — the page still shows the
+         numbers, so fall through to it instead of reporting signed-out. */
+      if (error && error.code === 401) {
         NS.send(provider, {
           status: 'signed-out',
           windows: [],
@@ -135,53 +161,25 @@
     });
   };
 
-  /* What the page itself says about usage, for the sites without an account
-     API: accessible meters, "42% used" copy, "3 of 20 messages" counters and
-     limit banners. */
+  /* What the page itself says about usage: the meters it draws plus the
+     numbers it prints in text, whatever the site's wording. This is the
+     reader behind every site without an account API, and the fallback for
+     the two that have one. */
   NS.genericPage = () => {
     const text = NS.pageText();
-    const windows = NS.progressBars();
-    const notes = [];
     const resetsAt = NS.resetFromText(text);
+    const windows = NS.pageMeters();
+    const notes = [];
 
-    const percentLine = /([^\n]{0,40}?)(\d{1,3}(?:\.\d+)?)\s*%\s*(?:used|of (?:your )?(?:limit|usage|quota))/i.exec(text);
-    if (percentLine) {
-      const used = NS.clamp(Number(percentLine[2]), 0, 100);
-      windows.unshift({
-        id: 'page-usage',
-        label: percentLine[1].trim().slice(0, 40) || 'Usage',
-        usedPercent: NS.round1(used),
-        remainingPercent: NS.round1(100 - used),
-        resetsAt,
-      });
-    }
-
-    const pair = /(\d{1,4})\s*(?:of|\/)\s*(\d{1,4})\s+(?:messages|prompts|credits|requests|queries|generations)/i.exec(text);
-    if (pair) {
-      const usedCount = Number(pair[1]);
-      const limit = Number(pair[2]);
-      if (limit > 0 && usedCount <= limit) {
-        const used = NS.round1(NS.clamp((usedCount / limit) * 100, 0, 100));
-        windows.unshift({
-          id: 'page-quota',
-          label: 'Quota',
-          usedPercent: used,
-          remainingPercent: NS.round1(100 - used),
-          resetsAt,
-        });
-      }
-    }
-
-    const left = /(\d{1,4})\s+(?:messages|prompts|credits|requests|queries|generations)\s+(?:left|remaining)/i.exec(text);
-    if (left && !windows.length) {
-      windows.push({
-        id: 'page-left',
-        label: 'Left',
-        usedPercent: null,
-        remainingPercent: null,
-        detail: `${left[1]} left`,
-        resetsAt,
-      });
+    /* A meter and a "25% used" line describe the same limit — keep one. */
+    const generic = new Set(['Used', 'Usage', 'Remaining']);
+    for (const window of Readers.windowsFromText(text, resetsAt)) {
+      const duplicate = windows.some(
+        (existing) =>
+          (existing.label === window.label && existing.usedPercent === window.usedPercent) ||
+          (generic.has(window.label) && existing.usedPercent === window.usedPercent)
+      );
+      if (!duplicate) windows.push(window);
     }
 
     const limited =
@@ -198,7 +196,7 @@
       });
     }
 
-    if (!windows.length) notes.push('Open a chat and send a message, then refresh.');
+    if (!windows.length) notes.push('No usage numbers on this page yet — open a chat or the usage page, then refresh.');
     return { windows, notes, plan: null };
   };
 
@@ -215,6 +213,7 @@
 
     const DEFAULT_MINUTES = 5;
     const MIN_GAP_MS = 10000;
+    const OBSERVE_GAP_MS = 45000;
     let timer = null;
     let lastRun = 0;
     let refreshOnFocus = true;
@@ -238,6 +237,27 @@
 
     setTimeout(safeRun, 1200);
     schedule(DEFAULT_MINUTES);
+
+    /* Sites draw their meters after the first paint, and chats change as you
+       use them. Read again when the page changes instead of waiting for the
+       timer — at most once every OBSERVE_GAP_MS. */
+    if (typeof MutationObserver !== 'undefined') {
+      let pending = null;
+      let lastObserved = 0;
+      const observer = new MutationObserver(() => {
+        clearTimeout(pending);
+        pending = setTimeout(() => {
+          if (Date.now() - lastObserved < OBSERVE_GAP_MS) return;
+          lastObserved = Date.now();
+          safeRun();
+        }, 1500);
+      });
+      observer.observe(document.body || document.documentElement, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    }
 
     try {
       if (chrome.storage && chrome.storage.local) {
@@ -264,6 +284,10 @@
     document.addEventListener('visibilitychange', () => {
       if (refreshOnFocus && document.visibilityState === 'visible') safeRun();
     });
-    NS.onRefresh(safeRun);
+    /* The popup's refresh button always reads, even if a read just happened. */
+    NS.onRefresh(() => {
+      lastRun = 0;
+      return safeRun();
+    });
   };
 })();

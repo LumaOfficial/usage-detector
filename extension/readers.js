@@ -61,6 +61,11 @@
       const ms = parseDuration(relative[1]);
       if (ms != null && ms > 0) return now + ms;
     }
+    const until = /(\d[^.;\n]{0,24}?)\s+(?:until|till|before)\s+(?:your\s+)?(?:next\s+)?(?:limit\s+)?(?:resets?|refill|refresh)/i.exec(text);
+    if (until) {
+      const ms = parseDuration(until[1]);
+      if (ms != null && ms > 0) return now + ms;
+    }
     const absolute = /(?:resets?|refresh(?:es)?|try again)\b[^.\n]{0,24}?\b(?:at|by)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i.exec(text);
     if (absolute) {
       let hours = Number(absolute[1]);
@@ -146,6 +151,64 @@
       remainingPercent: usedPercent == null ? null : round1(100 - usedPercent),
       resetsAt,
     };
+  };
+
+  /* The usage numbers a page prints as text, whatever the site's own wording:
+     "42% of your weekly limit", "58% left", "20 of 50 generations used",
+     "1,250 credits remaining". Pure text, so the content scripts share one
+     set of patterns instead of each site re-inventing them. */
+  const windowsFromText = (text, resetsAt = null) => {
+    if (!text) return [];
+
+    const out = [];
+    const seen = new Set();
+    const push = (id, label, usedPercent, extra) => {
+      const percent = usedPercent == null ? null : round1(clamp(usedPercent, 0, 100));
+      const detail = extra && extra.detail;
+      const key = `${label}|${percent == null ? detail : percent}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({
+        id,
+        label,
+        usedPercent: percent,
+        remainingPercent: percent == null ? null : round1(100 - percent),
+        resetsAt: resetsAt || null,
+        ...(extra || {}),
+      });
+    };
+
+    const count = (raw) => Number(String(raw).replace(/[,\s]/g, ''));
+    const clean = (raw, fallback) => {
+      let value = String(raw || '').replace(/\s+/g, ' ').trim();
+      value = value.replace(/^(?:you(?:'ve| have)?|your|the|used)\s+/i, '').replace(/[\s:=-]+$/, '');
+      if (!value) return fallback;
+      return value.charAt(0).toUpperCase() + value.slice(1, 40);
+    };
+
+    const percentUsed = /([^\n]{0,40}?)(\d{1,3}(?:\.\d+)?)\s*%\s*(?:of\s+(?:your\s+)?(?:\w+\s+){0,4}?(?:limit|quota|usage|allowance|budget|plan|credits?|messages?|requests?)|used|consumed)/i.exec(text);
+    if (percentUsed) push('page-usage', clean(percentUsed[1], 'Usage'), Number(percentUsed[2]));
+
+    const percentLeft = /([^\n]{0,40}?)(\d{1,3}(?:\.\d+)?)\s*%\s*(?:remaining|left|available|free)/i.exec(text);
+    if (percentLeft) push('page-remaining', clean(percentLeft[1], 'Remaining'), 100 - Number(percentLeft[2]));
+
+    const quota = /(\d[\d,]*)\s*(?:of|\/)\s*(\d[\d,]*)\s+(messages|prompts|credits|requests|queries|generations|images|tokens|searches)/i.exec(text);
+    if (quota) {
+      const usedCount = count(quota[1]);
+      const total = count(quota[2]);
+      if (total > 0 && usedCount <= total) {
+        const unit = quota[3].toLowerCase();
+        push('page-quota', `${unit.charAt(0).toUpperCase()}${unit.slice(1)} used`, (usedCount / total) * 100);
+      }
+    }
+
+    const left = /(\d[\d,]*)\s+(messages|prompts|credits|requests|queries|generations|images|tokens|searches)\s+(?:left|remaining|available)/i.exec(text);
+    if (left) push('page-left', clean(left[2], 'Left'), null, { detail: `${left[1]} left` });
+
+    const balance = /(credits?|balance|allowance)\s*(?:remaining|left|available)?\s*[:=]?\s*(\d[\d,]*)/i.exec(text);
+    if (balance) push('page-credits', 'Credits', null, { detail: `${balance[2]} credits` });
+
+    return out;
   };
 
   /* Pulls usage windows out of an account API payload, whatever its exact shape. */
@@ -285,6 +348,7 @@
     number,
     toEpoch,
     resetFromText,
+    windowsFromText,
     extractWindows,
     findValue,
     statusFor,

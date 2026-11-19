@@ -13,39 +13,11 @@
 
   const fetchUsage = () => Readers.readClaude(NS.fetchJson);
 
+  /* The account API is authoritative; what claude.ai draws on the page is the
+     fallback, read by the shared page reader. */
   const fromPage = () => {
-    const text = NS.pageText();
-    const windows = NS.progressBars();
-    const notes = [];
-
-    const percentLine = /([^\n]{0,48}?)(\d{1,3}(?:\.\d+)?)\s*%\s*(?:used|of (?:your )?(?:limit|usage))/i.exec(text);
-    if (percentLine) {
-      const used = NS.clamp(Number(percentLine[2]), 0, 100);
-      windows.unshift({
-        id: 'page-usage',
-        label: percentLine[1].trim().slice(0, 40) || 'Usage',
-        usedPercent: NS.round1(used),
-        remainingPercent: NS.round1(100 - used),
-        resetsAt: NS.resetFromText(text),
-      });
-    }
-
-    const limited =
-      /(?:you(?:['’]ve|\s+have)\s+)?(?:reached|hit)\s+(?:your|the)\s+(?:usage\s+|message\s+)?limit|usage limit reached|out of (?:messages|usage)/i.test(
-        text
-      );
-    if (limited && !windows.length) {
-      windows.push({
-        id: 'page-limit',
-        label: 'Usage limit',
-        usedPercent: 100,
-        remainingPercent: 0,
-        resetsAt: NS.resetFromText(text),
-      });
-    }
-
-    if (!windows.length) notes.push('Open a chat and send a message, then refresh.');
-    return { windows, notes, plan: planFromText() };
+    const page = NS.genericPage();
+    return { windows: page.windows, notes: page.notes, plan: planFromText() };
   };
 
   NS.start(PROVIDER, () => NS.detect({ provider: PROVIDER, api: fetchUsage, page: fromPage }));

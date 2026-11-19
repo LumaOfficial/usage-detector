@@ -36,7 +36,11 @@ keeps the countdown in your toolbar.
   forty-nine sites are read from their page when you have one open.
 - Reads the usage windows each site exposes for your plan — Claude's 5-hour
   session and weekly limits, ChatGPT's message caps — plus the reset countdown.
-- Falls back to the meters and limit banners already visible on the page.
+- Falls back to what the page itself shows: progress bars and meters
+  (`role="progressbar"`, `role="meter"`, `<progress>`, `<meter>`, `aria-valuenow`),
+  “42% of your weekly limit”, “58% left”, “20 of 50 generations used”,
+  “1,250 credits remaining”, limit banners and every reset wording it recognises.
+  The page is read again when it changes, so numbers appear as the site draws them.
 - Draws a **usage widget on the AI sites themselves**: a small shadow-DOM card in
   the corner with your tightest limits, resets and last check, styled to match
   the panel and hidden from the site's own CSS.
@@ -165,6 +169,9 @@ site.
 - Only Claude and ChatGPT expose an account endpoint this extension can read in
   the background. The other forty-nine sites are read from their page while one
   is open; their numbers are as good as what they render.
+- An account endpoint that answers 403 is not treated as signed out — only a
+  401 is. A 403 usually means the route wants a header the extension cannot
+  send, so it reads the page instead of showing “signed out”.
 - The sites' account endpoints are internal and undocumented, so they can change.
   The page-based fallback keeps the panel useful when they do.
 - API credit balances (OpenAI Platform, Anthropic Console, OpenRouter, Groq,

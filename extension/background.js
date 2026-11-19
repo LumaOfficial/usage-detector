@@ -99,7 +99,8 @@ async function readDirect(provider) {
       });
       return true;
     } catch (error) {
-      if (error && (error.code === 401 || error.code === 403)) signedOut = true;
+      /* A 403 means the route wants a header, not that you are signed out. */
+      if (error && error.code === 401) signedOut = true;
     }
   }
 
