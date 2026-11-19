@@ -379,7 +379,9 @@ function renderList() {
   const activeId = state.active && state.active.id;
 
   const visible = providers.filter((provider) => state.records[provider.id] || provider.id === activeId);
-  const primary = visible.length ? visible : providers;
+  /* Nothing read yet: list a first handful and keep the rest behind the toggle,
+     so a long site list doesn't turn the empty panel into a wall of rows. */
+  const primary = visible.length ? visible : providers.slice(0, 8);
   const rest = providers.filter((provider) => !primary.includes(provider));
 
   for (const provider of primary) root.append(providerRow(provider));

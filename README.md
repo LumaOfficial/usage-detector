@@ -2,7 +2,9 @@
 
 A small Manifest V3 browser extension that shows how much of your **AI usage
 limits** you have left — Claude, ChatGPT, Gemini, Copilot, Perplexity, Grok,
-DeepSeek, Mistral, Poe and Meta AI — without an account, an API key or a server.
+DeepSeek, Mistral, Poe, Meta AI, Qwen, Kimi, You.com, HuggingChat and Pi, plus
+third-party assistants like Sider, Monica, Merlin, MaxAI, Harpa and ChatHub —
+without an account, an API key or a server.
 It reads the sites you are signed in to, in the background, and can draw a small
 usage widget on the sites themselves.
 
@@ -22,8 +24,9 @@ keeps the countdown in your toolbar.
 
 - Detects which supported AI site the tab you are on is, names it in the panel
   and reads that tab on demand.
-- Covers ten sites: Claude, ChatGPT, Gemini, Copilot, Perplexity, Grok, DeepSeek,
-  Mistral, Poe and Meta AI.
+- Covers twenty-two sites: Claude, ChatGPT, Gemini, Copilot, Perplexity, Grok,
+  DeepSeek, Mistral, Poe, Meta AI, Qwen, Kimi, Base 1, You.com, HuggingChat, Pi,
+  Sider, Monica, Merlin, MaxAI, Harpa and ChatHub.
 - Reads Claude and ChatGPT in the background — no tab needs to be open. The other
   sites are read from their page when you have one open.
 - Reads the usage windows each site exposes for your plan — Claude's 5-hour
@@ -54,7 +57,7 @@ The settings page saves as you change a control:
 | Widget on the AI sites | Turn the on-page widget on or off |
 | Widget corner | Bottom right, bottom left, top right or top left |
 | Start the widget collapsed | Show only the percentage until clicked |
-| Sites to track | Which of the ten sites the panel, badge and widget count |
+| Sites to track | Which of the supported sites the panel, badge and widget count |
 
 Settings live in `chrome.storage.local` under `settings`.
 
@@ -139,7 +142,7 @@ site.
 ## Limits worth knowing
 
 - Only Claude and ChatGPT expose an account endpoint this extension can read in
-  the background. The other eight sites are read from their page while one is
+  the background. The other twenty sites are read from their page while one is
   open; their numbers are as good as what they render.
 - The sites' account endpoints are internal and undocumented, so they can change.
   The page-based fallback keeps the panel useful when they do.
