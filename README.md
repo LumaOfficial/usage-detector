@@ -3,7 +3,8 @@
 A small Manifest V3 browser extension that shows how much of your **AI usage
 limits** you have left — Claude, ChatGPT, Gemini, Copilot, Perplexity, Grok,
 DeepSeek, Mistral, Poe, Meta AI, Qwen, Kimi, You.com, HuggingChat and Pi, plus
-third-party assistants like Sider, Monica, Merlin, MaxAI, Harpa and ChatHub —
+third-party assistants like Sider, Monica, Merlin, MaxAI, Harpa and ChatHub, and
+thirty more — coding agents, API consoles and image, audio and video tools —
 without an account, an API key or a server.
 It reads the sites you are signed in to, in the background, and can draw a small
 usage widget on the sites themselves.
@@ -24,11 +25,15 @@ keeps the countdown in your toolbar.
 
 - Detects which supported AI site the tab you are on is, names it in the panel
   and reads that tab on demand.
-- Covers twenty-two sites: Claude, ChatGPT, Gemini, Copilot, Perplexity, Grok,
+- Covers fifty-one sites: Claude, ChatGPT, Gemini, Copilot, Perplexity, Grok,
   DeepSeek, Mistral, Poe, Meta AI, Qwen, Kimi, Base 1, You.com, HuggingChat, Pi,
-  Sider, Monica, Merlin, MaxAI, Harpa and ChatHub.
+  Sider, Monica, Merlin, MaxAI, Harpa and ChatHub, plus T3 Chat, Duck.ai, Lumo,
+  Reka, Genspark, Felo, Character.AI, Venice AI, Phind, OpenRouter, Groq,
+  AI Studio, OpenAI Platform, Anthropic Console, fal.ai, Cursor, Windsurf, v0,
+  Bolt, Lovable, Devin, Midjourney, Suno, ElevenLabs, Leonardo AI, Ideogram,
+  Runway, Krea and Replicate.
 - Reads Claude and ChatGPT in the background — no tab needs to be open. The other
-  sites are read from their page when you have one open.
+  forty-nine sites are read from their page when you have one open.
 - Reads the usage windows each site exposes for your plan — Claude's 5-hour
   session and weekly limits, ChatGPT's message caps — plus the reset countdown.
 - Falls back to the meters and limit banners already visible on the page.
@@ -158,10 +163,11 @@ site.
 ## Limits worth knowing
 
 - Only Claude and ChatGPT expose an account endpoint this extension can read in
-  the background. The other twenty sites are read from their page while one is
-  open; their numbers are as good as what they render.
+  the background. The other forty-nine sites are read from their page while one
+  is open; their numbers are as good as what they render.
 - The sites' account endpoints are internal and undocumented, so they can change.
   The page-based fallback keeps the panel useful when they do.
-- API credit balances in Anthropic Console and OpenAI Platform are not covered —
-  those need an API key, and this extension deliberately asks for none.
+- API credit balances (OpenAI Platform, Anthropic Console, OpenRouter, Groq,
+  fal.ai, Replicate) are read from the billing pages while you are signed in to
+  them; the extension still never asks for an API key.
 - Numbers come from the last background read or the last tab that reported them.
