@@ -1,63 +1,55 @@
-/* Renders the real extension popup and audits the shipped extension files.
-   No sample usage numbers: the panel shows only what the extension itself holds. */
+/* Renders the real extension panel and settings page in the stage, runs the
+   shipped site detector on any URL, and audits the extension files.
+   No sample usage numbers: the stage shows only what the extension itself holds. */
 
 (() => {
-  const frame = document.getElementById('popup');
-  const list = document.getElementById('audit');
-  const summary = document.getElementById('audit-summary');
+  const frame = document.getElementById('stage-frame');
+  const urlPill = document.getElementById('stage-url');
+  const tabs = Array.from(document.querySelectorAll('[data-view]'));
+  const versionChip = document.getElementById('version');
 
-  // Keep the frame exactly as tall as the panel inside it.
+  const VIEWS = {
+    popup: {
+      src: '/extension/popup/popup.html',
+      label: 'chrome-extension://…/popup.html',
+      title: 'The real extension panel, rendered live',
+    },
+    options: {
+      src: '/extension/options/options.html',
+      label: 'chrome-extension://…/options.html',
+      title: 'The real extension settings page, rendered live',
+    },
+  };
+
+  /* Keep the frame as tall as the page inside it. The settings page stretches to
+     100vh, so only resize when the content really differs from the frame. */
   const fit = () => {
     const doc = frame.contentDocument;
     if (!doc || !doc.body) return;
-    frame.style.height = `${Math.max(320, Math.min(640, doc.body.scrollHeight + 2))}px`;
+    const desired = Math.max(360, Math.min(960, doc.body.scrollHeight + 2));
+    if (Math.abs(frame.clientHeight - desired) > 4) frame.style.height = `${desired}px`;
   };
 
-  frame.addEventListener('load', () => {
+  const watch = () => {
     fit();
     const doc = frame.contentDocument;
-    if (!doc || typeof ResizeObserver === 'undefined') return;
+    if (!doc || !doc.body || typeof ResizeObserver === 'undefined') return;
     new ResizeObserver(fit).observe(doc.body);
-  });
-
-  const dot = () => {
-    const span = document.createElement('span');
-    span.className = 'audit-dot';
-    span.setAttribute('aria-hidden', 'true');
-    return span;
   };
 
-  const item = (ok, label, detail) => {
-    const li = document.createElement('li');
-    li.className = `audit-item ${ok ? 'is-ok' : 'is-bad'}`;
-    li.append(dot());
+  frame.addEventListener('load', watch);
 
-    const name = document.createElement('span');
-    name.className = 'audit-label';
-    name.textContent = label;
-    li.append(name);
-
-    if (detail) {
-      const meta = document.createElement('span');
-      meta.className = 'audit-detail';
-      meta.textContent = detail;
-      li.append(meta);
-    }
-
-    list.append(li);
-    return ok;
+  const show = (view) => {
+    const next = VIEWS[view] ? view : 'popup';
+    for (const tab of tabs) tab.setAttribute('aria-pressed', String(tab.dataset.view === next));
+    if (urlPill) urlPill.textContent = VIEWS[next].label;
+    frame.title = VIEWS[next].title;
+    if (frame.getAttribute('src') !== VIEWS[next].src) frame.setAttribute('src', VIEWS[next].src);
   };
 
-  const exists = async (path) => {
-    try {
-      const response = await fetch(path, { method: 'HEAD', cache: 'no-store' });
-      return response.ok;
-    } catch (_) {
-      return false;
-    }
-  };
+  for (const tab of tabs) tab.addEventListener('click', () => show(tab.dataset.view));
 
-  // Site detector: the same module the extension ships, run on any URL.
+  /* Site detector: the same module the extension ships, run on any URL. */
   const detector = document.getElementById('detector');
   const detectorUrl = document.getElementById('detector-url');
   const detectorOut = document.getElementById('detector-out');
@@ -99,6 +91,47 @@
     }
   }
 
+  /* Extension audit: read the shipped manifest and the files it points at. */
+  const list = document.getElementById('audit');
+  const summary = document.getElementById('audit-summary');
+
+  const dot = () => {
+    const span = document.createElement('span');
+    span.className = 'audit-dot';
+    span.setAttribute('aria-hidden', 'true');
+    return span;
+  };
+
+  const item = (ok, label, detail) => {
+    const li = document.createElement('li');
+    li.className = `audit-item ${ok ? 'is-ok' : 'is-bad'}`;
+    li.append(dot());
+
+    const name = document.createElement('span');
+    name.className = 'audit-label';
+    name.textContent = label;
+    li.append(name);
+
+    if (detail) {
+      const meta = document.createElement('span');
+      meta.className = 'audit-detail';
+      meta.textContent = detail;
+      li.append(meta);
+    }
+
+    list.append(li);
+    return ok;
+  };
+
+  const exists = async (path) => {
+    try {
+      const response = await fetch(path, { method: 'HEAD', cache: 'no-store' });
+      return response.ok;
+    } catch (_) {
+      return false;
+    }
+  };
+
   const run = async () => {
     list.textContent = '';
 
@@ -112,6 +145,8 @@
       summary.textContent = 'The extension folder could not be read from this preview.';
       return;
     }
+
+    if (versionChip) versionChip.textContent = `v${manifest.version}`;
 
     const worker = manifest.background && manifest.background.service_worker;
     const popup = manifest.action && manifest.action.default_popup;

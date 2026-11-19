@@ -3,67 +3,219 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Usage Detector — Claude &amp; ChatGPT</title>
+<title>Usage Detector — Claude &amp; ChatGPT usage, counted</title>
+<meta name="description" content="A small Manifest V3 extension that counts how much Claude and ChatGPT usage you have left — no account, no API key, no server.">
 <link rel="stylesheet" href="/preview/preview.css">
 </head>
 <body>
-<div class="page">
-  <header class="top">
+
+<header class="nav">
+  <a class="nav-brand" href="#top">
     <span class="logo" aria-hidden="true"><i></i><i></i></span>
-    <div class="top-text">
-      <h1>Usage Detector</h1>
-      <p>Claude &amp; ChatGPT usage limits at a glance — one small browser extension.</p>
+    <span class="nav-name">Usage Detector</span>
+  </a>
+  <nav class="nav-links" aria-label="Page sections">
+    <a href="#features">Features</a>
+    <a href="#demo">Live demo</a>
+    <a href="#how">How it works</a>
+    <a href="#install">Install</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <span class="nav-version" id="version">MV3</span>
+  <a class="nav-cta" href="#install">Get the extension</a>
+</header>
+
+<main>
+
+  <!-- hero -->
+  <section class="hero" id="top">
+    <div class="hero-copy">
+      <span class="eyebrow"><i aria-hidden="true"></i>Manifest V3 · no account, no API key</span>
+      <h1>Know how much <span class="hl hl--claude">Claude</span> and <span class="hl hl--chatgpt">ChatGPT</span> have left.</h1>
+      <p class="lede">Both sites call your remaining usage <em>“up to our discretion.”</em> This extension counts it — reading the numbers your own signed-in account already returns, in the background, with no tab open.</p>
+
+      <div class="hero-actions">
+        <a class="btn btn--primary" href="#install">Install in 30 seconds</a>
+        <a class="btn btn--ghost" href="#demo">See the live panel</a>
+      </div>
+
+      <dl class="stats">
+        <div><dt>2</dt><dd>sites tracked</dd></div>
+        <div><dt>0</dt><dd>accounts or keys</dd></div>
+        <div><dt>5 min</dt><dd>default refresh</dd></div>
+        <div><dt>7 days</dt><dd>usage history</dd></div>
+      </dl>
+
+      <ul class="browsers" aria-label="Supported browsers">
+        <li>Chrome</li>
+        <li>Edge</li>
+        <li>Opera</li>
+        <li>Brave</li>
+        <li>Vivaldi</li>
+        <li>Arc</li>
+      </ul>
     </div>
-    <span class="tag">Manifest V3</span>
-  </header>
 
-  <div class="grid">
-    <section class="stage" aria-label="Extension popup">
-      <div class="stage-top">
-        <span class="stage-puzzle" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
-            <path d="M10 4a2 2 0 1 1 4 0v1h3a1 1 0 0 1 1 1v3h1a2 2 0 1 1 0 4h-1v3a1 1 0 0 1-1 1h-3v-1a2 2 0 1 0-4 0v1H7a1 1 0 0 1-1-1v-3H5a2 2 0 1 1 0-4h1V6a1 1 0 0 1 1-1h3V4Z"></path>
-          </svg>
+    <div class="stage" id="demo">
+      <div class="stage-inner">
+        <div class="chrome">
+          <span class="chrome-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="chrome-url" id="stage-url">chrome-extension://…/popup.html</span>
+        </div>
+
+        <div class="stage-tabs" role="group" aria-label="Preview the extension surfaces">
+          <button type="button" data-view="popup" aria-pressed="true">Panel</button>
+          <button type="button" data-view="options" aria-pressed="false">Settings</button>
+        </div>
+
+        <div class="frame">
+          <iframe id="stage-frame" src="/extension/popup/popup.html" title="The real extension panel, rendered live"></iframe>
+        </div>
+
+        <p class="stage-note">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span>Rendered live from <code>extension/</code>, with no sample numbers. The panel stays empty here because a web page can't see your tabs or reach <code>claude.ai</code> or <code>chatgpt.com</code> — the installed extension does both from inside your browser.</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- features -->
+  <section class="section" id="features">
+    <div class="section-head">
+      <span class="eyebrow"><i aria-hidden="true"></i>Features</span>
+      <h2 class="section-title">Built to sit in your toolbar and stay out of the way.</h2>
+      <p class="section-lede">Everything the extension does, without a dashboard to log into.</p>
+    </div>
+
+    <div class="feature-grid">
+      <article class="feature">
+        <span class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path></svg>
         </span>
-        <span class="stage-name">Usage Detector</span>
-        <span class="stage-live"><i aria-hidden="true"></i>Live</span>
+        <h3>No tab needed</h3>
+        <p>A background alarm asks both sites on your refresh interval, so the panel is already filled when you open it.</p>
+      </article>
+
+      <article class="feature">
+        <span class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </span>
+        <h3>Claude windows</h3>
+        <p>Your 5-hour session, weekly limit and extra-credit usage, each with its reset countdown.</p>
+      </article>
+
+      <article class="feature">
+        <span class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+        </span>
+        <h3>ChatGPT caps</h3>
+        <p>Message limits for your plan and how much of the current window is already gone.</p>
+      </article>
+
+      <article class="feature">
+        <span class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"></circle><path d="M15.5 13.5L17 22l-5-3-5 3 1.5-8.5"></path></svg>
+        </span>
+        <h3>Toolbar badge</h3>
+        <p>The percentage left on your tightest limit, painted green, amber or red as it runs down.</p>
+      </article>
+
+      <article class="feature">
+        <span class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"></path><path d="M17 6h6v6"></path></svg>
+        </span>
+        <h3>Seven-day trend</h3>
+        <p>A sparkline on every card shows how fast you are burning through the window.</p>
+      </article>
+
+      <article class="feature">
+        <span class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        </span>
+        <h3>Low-usage alerts</h3>
+        <p>One desktop notification when a limit crosses your threshold, re-armed once it recovers.</p>
+      </article>
+
+      <article class="feature">
+        <span class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"></path><path d="M1 14h6M9 8h6M17 16h6"></path></svg>
+        </span>
+        <h3>Your settings</h3>
+        <p>Alert threshold, refresh interval, badge focus and a light, dark or system panel.</p>
+      </article>
+
+      <article class="feature">
+        <span class="feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        </span>
+        <h3>Nothing leaves the browser</h3>
+        <p>No account, no API key, no server. Numbers stay in the browser's own local storage.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- how it works -->
+  <section class="section" id="how">
+    <div class="section-head">
+      <span class="eyebrow"><i aria-hidden="true"></i>How it works</span>
+      <h2 class="section-title">Three steps, every refresh.</h2>
+      <p class="section-lede">The extension never guesses. It reads the same numbers the sites' own usage screens use.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step">
+        <span class="step-num">Step 01</span>
+        <h3>Wake on schedule</h3>
+        <p>A background alarm wakes the worker every refresh interval — five minutes by default — with no Claude or ChatGPT tab open.</p>
+      </li>
+      <li class="step">
+        <span class="step-num">Step 02</span>
+        <h3>Read the real numbers</h3>
+        <p>The shared readers parse the usage windows each account endpoint returns, using the sign-in your browser already holds. Meters on the page are the fallback.</p>
+      </li>
+      <li class="step">
+        <span class="step-num">Step 03</span>
+        <h3>Paint the countdown</h3>
+        <p>The result lands in local storage: toolbar badge, panel cards, seven-day history, and a notification when a limit gets low.</p>
+      </li>
+    </ol>
+
+    <div class="reads">
+      <h3 class="reads-title">What the panel reads</h3>
+      <div class="reads-grid">
+        <div class="reads-col reads-col--claude">
+          <h4>Claude</h4>
+          <ul>
+            <li>5-hour session window</li>
+            <li>Weekly limit</li>
+            <li>Extra-credit usage</li>
+            <li>Reset countdown per window</li>
+          </ul>
+        </div>
+        <div class="reads-col reads-col--chatgpt">
+          <h4>ChatGPT</h4>
+          <ul>
+            <li>Message caps for your plan</li>
+            <li>Usage inside the current window</li>
+            <li>Reset countdown</li>
+            <li>Plan name, when the site exposes it</li>
+          </ul>
+        </div>
       </div>
+      <p class="note">Only the limits your plan exposes. API credit balances in Anthropic Console and OpenAI Platform aren't covered — those need a key, and this extension deliberately asks for none.</p>
+    </div>
+  </section>
 
-      <div class="frame">
-        <iframe id="popup" src="/extension/popup/popup.html" title="The extension popup, rendered live"></iframe>
+  <!-- site detector -->
+  <section class="section" id="detector-section">
+    <div class="panel detector-panel">
+      <div class="detector-copy">
+        <span class="eyebrow"><i aria-hidden="true"></i>Try it</span>
+        <h2 class="panel-title">Site detector</h2>
+        <p>The extension first works out whether a tab is Claude or ChatGPT, then reads that tab. Paste a URL to run the same detector it ships.</p>
       </div>
-
-      <p class="hint">
-        This is the real panel from <code>extension/popup/</code>, with no sample numbers in it.
-        It stays empty here because a web page can't see your tabs or reach <code>claude.ai</code> or
-        <code>chatgpt.com</code> — the installed extension does both from inside your browser.
-      </p>
-    </section>
-
-    <div class="content">
-      <section class="block">
-        <h2>Why this exists</h2>
-        <p>Ask either site how much you have left and the answer is the same: usage is <em>“up to our discretion.”</em> No counter, no reset clock, no warning before the wall.</p>
-        <p>This extension measures it for you — it reads the numbers your own signed-in account already returns and the meters the page already draws, then keeps the countdown in your toolbar.</p>
-      </section>
-
-      <section class="block">
-        <h2>What it does</h2>
-        <ul class="checks">
-          <li><strong>No tab needed</strong> — reads both sites in the background, on your refresh interval.</li>
-          <li><strong>Claude</strong> — your 5-hour session, weekly and extra-credit usage, with reset countdowns.</li>
-          <li><strong>ChatGPT</strong> — message limits for your plan and how much of the window is gone.</li>
-          <li><strong>Toolbar badge</strong> — the percentage left on your tightest limit, green to red.</li>
-          <li><strong>Seven-day trend</strong> — each card draws how far your tightest limit has climbed.</li>
-          <li><strong>Low-usage alerts</strong> — a desktop notification when a limit drops below your threshold.</li>
-          <li><strong>Your call</strong> — alert threshold, refresh interval, badge focus and panel theme.</li>
-          <li><strong>Zero setup</strong> — no account, no API key, no server.</li>
-        </ul>
-      </section>
-
-      <section class="block">
-        <h2>Site detector</h2>
-        <p>The extension first works out whether the tab you are on is Claude or ChatGPT, then reads that tab. Paste a URL to run the same detector it ships with.</p>
+      <div class="detector-body">
         <form class="detector" id="detector" autocomplete="off">
           <input id="detector-url" class="detector-input" type="text" placeholder="https://claude.ai/new" aria-label="URL to check" spellcheck="false">
           <button class="detector-btn" type="submit">Detect</button>
@@ -74,10 +226,20 @@
           <button type="button" class="detector-chip" data-url="https://example.com/">example.com</button>
         </div>
         <p class="detector-out" id="detector-out" aria-live="polite">Reading this page's address…</p>
-      </section>
+      </div>
+    </div>
+  </section>
 
-      <section class="block">
-        <h2>Install it</h2>
+  <!-- install + check -->
+  <section class="section" id="install">
+    <div class="section-head">
+      <span class="eyebrow"><i aria-hidden="true"></i>Install</span>
+      <h2 class="section-title">Load it unpacked in under a minute.</h2>
+      <p class="section-lede">No build step, no store account. The files in <code>extension/</code> are what the browser loads.</p>
+    </div>
+
+    <div class="band">
+      <div class="panel">
         <ol class="steps">
           <li>
             <span aria-hidden="true">1</span>
@@ -92,46 +254,112 @@
             <div>Choose <strong>Load unpacked</strong>, select the <code>extension/</code> folder, then pin the icon to the toolbar.</div>
           </li>
         </ol>
-        <p class="note">Works in Chrome, Edge, Opera, Brave, Vivaldi and Arc — any Chromium browser with Manifest V3 support.</p>
-      </section>
+        <p class="note">Works in Chrome, Edge, Opera, Brave, Vivaldi and Arc — any Chromium browser with Manifest V3 support (Chrome 102 and newer).</p>
+      </div>
 
-      <section class="block">
-        <h2>Settings</h2>
-        <p>The options page from <code>extension/options/</code>, rendered live. Changes save as you make them and apply to the panel above.</p>
-        <div class="frame frame--wide">
-          <iframe id="options" src="/extension/options/options.html" title="The extension settings page, rendered live"></iframe>
-        </div>
-      </section>
-
-      <section class="block">
-        <h2>Extension check</h2>
+      <div class="panel">
+        <h3 class="panel-title">Extension check</h3>
+        <p class="panel-lede">Read live from the manifest and the files beside it.</p>
         <ul class="audit" id="audit" aria-live="polite">
           <li class="audit-item"><span class="audit-dot" aria-hidden="true"></span><span class="audit-label">Reading the manifest…</span></li>
         </ul>
         <p class="note" id="audit-summary"></p>
-      </section>
+      </div>
+    </div>
+  </section>
 
-      <section class="block">
-        <h2>Panel is still empty?</h2>
-        <ul class="checks">
-          <li>Stay signed in to <code>claude.ai</code> and <code>chatgpt.com</code> — the extension reads both in the background, no tab needed.</li>
-          <li>Press the refresh button in the panel. It asks every open tab to report again.</li>
-          <li>Tabs that were already open when you installed the extension are handled for you; a reload of the site always works too.</li>
-          <li>If a site changes its usage screen, the panel says <em>read from the page</em> and shows whatever that page displays.</li>
-        </ul>
-      </section>
+  <!-- faq -->
+  <section class="section section--faq" id="faq">
+    <div class="section-head">
+      <span class="eyebrow"><i aria-hidden="true"></i>Questions</span>
+      <h2 class="section-title">Answers, in one place.</h2>
+      <p class="section-lede">Everything worth knowing before you install it.</p>
+    </div>
 
-      <section class="block">
-        <h2>How it reads usage</h2>
-        <p>A background alarm asks both sites for the same usage numbers their own settings screens show, using the sign-in your browser already holds — so the panel fills in with no tab open. When you do have a tab open, a content script adds the meters and limit banners already on the page as a fallback. Everything is cached in the browser's local extension storage.</p>
-        <ul class="checks">
-          <li>No account, no API keys, no server — nothing is sent anywhere.</li>
-          <li>Refreshes on the interval you set, when you open the panel, and when a tab becomes visible.</li>
-        </ul>
-      </section>
+    <div class="faq-list">
+      <details class="qa">
+        <summary>Why does the live panel on this page stay empty?</summary>
+        <div class="qa-body">
+          <p>This page is an ordinary web page, so it can't see your tabs or make requests to <code>claude.ai</code> and <code>chatgpt.com</code>. The installed extension does both from inside your browser — that's the only difference. It ships no sample numbers, so an empty panel here is the same empty panel you get before the extension has read a site.</p>
+        </div>
+      </details>
+
+      <details class="qa">
+        <summary>Do I need to keep a Claude or ChatGPT tab open?</summary>
+        <div class="qa-body">
+          <p>No. A background alarm wakes the worker on your refresh interval and asks both sites for the same numbers their own settings screens show, using the sign-in cookies your browser already holds. Having a tab open just adds a second, page-level reading.</p>
+        </div>
+      </details>
+
+      <details class="qa">
+        <summary>Do I need an account, an API key or a server?</summary>
+        <div class="qa-body">
+          <p>None of them. The extension uses the session you already have in your browser, keeps everything in <code>chrome.storage.local</code>, and sends nothing to any third party. There is no backend to run.</p>
+        </div>
+      </details>
+
+      <details class="qa">
+        <summary>What does the toolbar badge show?</summary>
+        <div class="qa-body">
+          <p>The percentage left on your tightest limit, coloured green, amber or red. In the settings page you can point it at the tightest limit, Claude only, or ChatGPT only, and set the amber threshold with the low-usage alert slider.</p>
+        </div>
+      </details>
+
+      <details class="qa">
+        <summary>How accurate are the numbers?</summary>
+        <div class="qa-body">
+          <p>They come from the same usage windows each site's own settings screen reads, or — when an endpoint doesn't answer — from the meters and limit banners already rendered on the page. Values reflect the last background read or the last tab that reported, so they can lag by up to one refresh interval.</p>
+        </div>
+      </details>
+
+      <details class="qa">
+        <summary>What happens if a site changes its usage screen?</summary>
+        <div class="qa-body">
+          <p>The endpoints are internal and undocumented, so they can change. The page-based fallback keeps the panel useful when they do: the card says <em>read from the page</em> and shows whatever that page displays. <code>extension/readers.js</code> is the single place to update the parsing.</p>
+        </div>
+      </details>
+
+      <details class="qa">
+        <summary>Where is my usage data stored?</summary>
+        <div class="qa-body">
+          <p>In the browser's local extension storage, per provider, alongside a seven-day history of your tightest limit. Clearing the extension's data removes all of it; uninstalling does the same.</p>
+        </div>
+      </details>
+
+      <details class="qa">
+        <summary>Which browsers and permissions does it need?</summary>
+        <div class="qa-body">
+          <p>Any Chromium browser with Manifest V3 — Chrome 102+, Edge, Opera, Brave, Vivaldi, Arc. Permissions: <code>storage</code> for cached numbers, <code>alarms</code> for the background refresh, <code>notifications</code> for low-usage alerts, <code>scripting</code> to inject into Claude or ChatGPT tabs that were already open at install, and host access limited to <code>claude.ai</code>, <code>chatgpt.com</code> and <code>chat.openai.com</code>.</p>
+        </div>
+      </details>
+
+      <details class="qa">
+        <summary>Does it cover API billing or credits?</summary>
+        <div class="qa-body">
+          <p>No. Anthropic Console and OpenAI Platform credit balances require an API key, and this extension deliberately asks for none. It tracks the chat usage limits your signed-in plan exposes.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="foot-brand">
+    <span class="logo logo--sm" aria-hidden="true"><i></i><i></i></span>
+    <div>
+      <strong>Usage Detector</strong>
+      <span>Manifest V3 · Claude &amp; ChatGPT</span>
     </div>
   </div>
-</div>
+  <nav class="foot-links" aria-label="Footer">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#install">Install</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <p class="foot-note">Not affiliated with Anthropic or OpenAI.</p>
+</footer>
 
 <script src="/extension/sites.js"></script>
 <script src="/preview/preview.js"></script>
