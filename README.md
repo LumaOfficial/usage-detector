@@ -95,8 +95,8 @@ extension/
   options/
     options.html/.css/.js  the settings page
   icons/               toolbar icons
-preview/               standalone page that renders the real popup and settings
-                       page, and audits the shipped files
+preview/               standalone page that shows the real popup at its natural
+                       size, so it can be seen without loading the extension
 ```
 
 Settings live in `chrome.storage.local` under `settings`; history is kept per

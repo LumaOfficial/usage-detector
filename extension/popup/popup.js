@@ -119,6 +119,77 @@ function renderDetect() {
   else delete action.dataset.refreshSite;
 }
 
+/* The single limit closest to running out, across both providers. */
+function tightest() {
+  let best = null;
+  for (const provider of PROVIDERS) {
+    const record = state[provider.id];
+    for (const win of (record && record.windows) || []) {
+      if (typeof win.remainingPercent !== 'number') continue;
+      if (!best || win.remainingPercent < best.remaining) {
+        best = { provider, win, remaining: win.remainingPercent, record };
+      }
+    }
+  }
+  return best;
+}
+
+function renderOverview() {
+  const root = document.getElementById('overview');
+  if (!root) return;
+  root.textContent = '';
+
+  const best = tightest();
+  const box = el('div', 'ov');
+
+  const head = el('div', 'ov-head');
+  head.append(el('span', 'ov-label', 'Tightest limit'));
+
+  const main = el('div', 'ov-main');
+
+  if (best) {
+    const left = Math.max(0, Math.round(best.remaining));
+    const limited = best.record.status === 'limited';
+    const tone = limited || best.remaining <= 0 ? 'bad' : best.remaining <= settings.alertThreshold ? 'warn' : 'ok';
+
+    head.append(el('span', `ov-state ov-state--${tone}`, tone === 'bad' ? 'At the limit' : tone === 'warn' ? 'Running low' : 'Comfortable'));
+    main.append(el('span', 'ov-value', `${left}`), el('span', 'ov-unit', '% left'));
+    box.append(head, main);
+
+    const sub = el('p', 'ov-sub');
+    sub.append(el('span', `ov-mark ov-mark--${best.provider.id}`, best.provider.mark));
+    sub.append(el('span', null, `${best.provider.name} · ${best.win.label || 'Usage'}`));
+    box.append(sub);
+
+    const track = el('div', 'ov-track');
+    const fill = el('span', `ov-fill ${tone}`);
+    fill.style.width = `${Math.min(100, Math.max(0, best.remaining))}%`;
+    track.append(fill);
+    box.append(track);
+
+    const foot = [];
+    if (best.win.resetsAt) foot.push(`Resets in ${until(best.win.resetsAt)}`);
+    if (best.record.detectedAt) foot.push(`checked ${ago(best.record.detectedAt)}`);
+    if (foot.length) box.append(el('p', 'ov-foot', foot.join(' · ')));
+  } else {
+    const signedOut = PROVIDERS.find((provider) => state[provider.id] && state[provider.id].status === 'signed-out');
+    head.append(el('span', 'ov-state', signedOut ? 'Signed out' : 'Waiting'));
+    main.append(el('span', 'ov-value ov-value--idle', '—'), el('span', 'ov-unit', '% left'));
+    box.append(head, main);
+    box.append(
+      el(
+        'p',
+        'ov-sub',
+        signedOut
+          ? `Sign in to ${signedOut.hostName} to start counting.`
+          : 'No reads yet — the extension checks both sites in the background and fills this in on its own.'
+      )
+    );
+  }
+
+  root.append(box);
+}
+
 function worstRemaining(record) {
   let value = null;
   for (const window of (record && record.windows) || []) {
@@ -219,10 +290,10 @@ function emptyBlock(provider, record) {
   const here = Boolean(state.active && state.active.id === provider.id);
 
   let text;
-  if (signedOut) text = `Sign in to ${provider.hostName} to read your usage.`;
+  if (signedOut) text = `Sign in to ${provider.hostName} to start counting.`;
   else if (note) text = note;
-  else if (here) text = `You're on ${provider.hostName} — the panel fills in as soon as the page reports.`;
-  else text = `Nothing read yet — the extension checks ${provider.hostName} on its own, and reads the page when you have it open.`;
+  else if (here) text = `You're on ${provider.hostName} — this fills in as soon as the page reports.`;
+  else text = 'Waiting for the first read.';
   wrap.append(el('p', 'empty-text', text));
 
   const button = el('button', 'btn', here ? 'Read this tab' : `Open ${provider.hostName}`);
@@ -280,6 +351,7 @@ function subtitle() {
 
 function render() {
   renderDetect();
+  renderOverview();
 
   const root = document.getElementById('providers');
   if (!root) return;
@@ -383,6 +455,7 @@ document.addEventListener('click', (event) => {
   const settingsButton = target.closest('#settings');
   if (settingsButton) {
     if (isExtension) chrome.runtime.openOptionsPage();
+    else window.open('../options/options.html', '_blank', 'noopener');
     return;
   }
 
@@ -399,10 +472,8 @@ if (isExtension) {
   });
 } else {
   document.body.classList.add('is-embedded');
-  const settingsButton = document.getElementById('settings');
-  if (settingsButton) settingsButton.hidden = true;
 
-  // The preview renders the settings page beside this panel; follow its changes.
+  // The settings page writes to localStorage; follow changes made there.
   window.addEventListener('storage', (event) => {
     if (!event.key || event.key === 'usage-detector:settings') load();
   });

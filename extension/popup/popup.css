@@ -319,11 +319,171 @@ h1 {
   pointer-events: none;
 }
 
+/* at a glance */
+.overview {
+  padding: 12px 12px 0;
+}
+
+.ov {
+  position: relative;
+  padding: 11px 12px 12px;
+  border-radius: 15px;
+  border: 1px solid var(--line);
+  background: var(--card-wash), radial-gradient(120% 100% at 0% 0%, rgba(124, 92, 255, 0.22), transparent 62%);
+  backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 20px 36px -28px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.ov::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(124, 92, 255, 0.9), rgba(47, 212, 165, 0.7), transparent);
+}
+
+.ov-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ov-label {
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.ov-state {
+  font-size: 9.5px;
+  font-weight: 720;
+  color: var(--dim);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.ov-state--ok {
+  color: var(--ok-ink);
+  background: linear-gradient(135deg, rgba(47, 212, 165, 0.26), rgba(47, 212, 165, 0.08));
+  border-color: rgba(47, 212, 165, 0.42);
+}
+
+.ov-state--warn {
+  color: var(--warn-ink);
+  background: linear-gradient(135deg, rgba(240, 166, 60, 0.28), rgba(240, 166, 60, 0.08));
+  border-color: rgba(240, 166, 60, 0.44);
+}
+
+.ov-state--bad {
+  color: var(--bad-ink);
+  background: linear-gradient(135deg, rgba(255, 95, 109, 0.28), rgba(255, 95, 109, 0.1));
+  border-color: rgba(255, 95, 109, 0.46);
+}
+
+.ov-main {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.ov-value {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.ov-value--idle {
+  color: var(--dim);
+}
+
+.ov-unit {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.ov-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0 0;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.ov-mark {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-size: 8px;
+  font-weight: 800;
+  color: #0b0b14;
+}
+
+.ov-mark--claude {
+  background: linear-gradient(140deg, var(--claude), #ffc4ad);
+}
+
+.ov-mark--chatgpt {
+  background: linear-gradient(140deg, var(--chatgpt), #8ff5d8);
+}
+
+.ov-track {
+  margin-top: 8px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.ov-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1fae86, #4ce3b6);
+  box-shadow: 0 0 10px -1px rgba(47, 212, 165, 0.85);
+  transition: width 0.4s ease;
+}
+
+.ov-fill.warn {
+  background: linear-gradient(90deg, #d98a22, #ffc46b);
+  box-shadow: 0 0 10px -1px rgba(240, 166, 60, 0.85);
+}
+
+.ov-fill.bad {
+  background: linear-gradient(90deg, #e2414f, #ff8a6b);
+  box-shadow: 0 0 10px -1px rgba(255, 95, 109, 0.85);
+}
+
+.ov-foot {
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: var(--dim);
+}
+
 /* cards */
 .providers {
-  padding: 12px 12px 13px;
+  padding: 8px 12px 10px;
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .card {
@@ -332,7 +492,7 @@ h1 {
   border-radius: 15px;
   background: var(--card-wash), radial-gradient(120% 90% at 0% 0%, var(--tint, rgba(124, 92, 255, 0.14)), transparent 62%);
   backdrop-filter: blur(16px) saturate(140%);
-  padding: 12px 13px 13px;
+  padding: 11px 12px 12px;
   overflow: hidden;
   box-shadow: 0 20px 36px -28px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
@@ -580,28 +740,35 @@ h1 {
 
 /* empty state */
 .empty {
-  margin-top: 11px;
-  border: 1px dashed var(--line-strong);
-  border-radius: 11px;
-  padding: 11px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 9px 8px 10px;
   background: linear-gradient(140deg, rgba(124, 92, 255, 0.1), rgba(47, 212, 165, 0.05));
 }
 
 .empty-text {
-  margin: 0 0 9px;
-  font-size: 11.5px;
-  line-height: 1.45;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 10.8px;
+  line-height: 1.4;
   color: var(--muted);
 }
 
 .btn {
+  flex: none;
+  white-space: nowrap;
   border: 1px solid rgba(140, 122, 255, 0.4);
   background: linear-gradient(135deg, rgba(124, 92, 255, 0.3), rgba(47, 212, 165, 0.22));
   color: var(--ink);
   font: inherit;
-  font-size: 11.5px;
+  font-size: 10.8px;
   font-weight: 660;
-  padding: 5px 11px;
+  padding: 4px 9px;
   border-radius: 8px;
   cursor: pointer;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
@@ -621,9 +788,9 @@ h1 {
 /* why the panel exists */
 .why {
   margin: 0;
-  padding: 0 14px 4px;
-  font-size: 10px;
-  line-height: 1.45;
+  padding: 0 14px 2px;
+  font-size: 9.5px;
+  line-height: 1.4;
   color: var(--dim);
   text-align: center;
 }
@@ -635,7 +802,7 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 9px 12px 11px;
+  padding: 8px 12px 9px;
 }
 
 .foot::before {
@@ -684,7 +851,8 @@ h1 {
 
   .icon-btn,
   .btn,
-  .meter-fill {
+  .meter-fill,
+  .ov-fill {
     transition: none;
   }
 }
