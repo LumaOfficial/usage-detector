@@ -186,13 +186,15 @@
       return value.charAt(0).toUpperCase() + value.slice(1, 40);
     };
 
-    const percentUsed = /([^\n]{0,40}?)(\d{1,3}(?:\.\d+)?)\s*%\s*(?:of\s+(?:your\s+)?(?:\w+\s+){0,4}?(?:limit|quota|usage|allowance|budget|plan|credits?|messages?|requests?)|used|consumed)/i.exec(text);
-    if (percentUsed) push('page-usage', clean(percentUsed[1], 'Usage'), Number(percentUsed[2]));
+    const percentUsed = /([^\n]{0,40}?)(\d{1,3}(?:\.\d+)?)\s*%\s*(?:of\s+(?:your\s+)?((?:\w+\s+){0,4}?(?:limit|quota|usage|allowance|budget|plan|credits?|messages?|requests?))|used|consumed)/i.exec(text);
+    /* "42% of your weekly limit" names the limit after the number; use that
+       name rather than the sentence in front of it. */
+    if (percentUsed) push('page-usage', clean(percentUsed[3] || percentUsed[1], 'Usage'), Number(percentUsed[2]));
 
     const percentLeft = /([^\n]{0,40}?)(\d{1,3}(?:\.\d+)?)\s*%\s*(?:remaining|left|available|free)/i.exec(text);
     if (percentLeft) push('page-remaining', clean(percentLeft[1], 'Remaining'), 100 - Number(percentLeft[2]));
 
-    const quota = /(\d[\d,]*)\s*(?:of|\/)\s*(\d[\d,]*)\s+(messages|prompts|credits|requests|queries|generations|images|tokens|searches)/i.exec(text);
+    const quota = /(\d[\d,]*)\s*(?:of|\/)\s*(\d[\d,]*)\s+(?:[\w-]+\s+){0,2}?(messages|prompts|credits|requests|queries|generations|images|tokens|searches)/i.exec(text);
     if (quota) {
       const usedCount = count(quota[1]);
       const total = count(quota[2]);

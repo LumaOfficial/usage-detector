@@ -183,12 +183,17 @@
 
     for (const window of Readers.windowsFromText(text, resetsAt)) {
       const key = core(window.label);
-      const duplicate = windows.some((existing) => {
+      const duplicate = windows.find((existing) => {
         if (existing.usedPercent !== window.usedPercent) return false;
         const other = core(existing.label);
         return !key || !other || key === other || key.includes(other) || other.includes(key);
       });
-      if (!duplicate) windows.push(window);
+      if (!duplicate) {
+        windows.push(window);
+      } else if (!duplicate.resetsAt && window.resetsAt) {
+        /* The bar has no reset time of its own; the sentence beside it does. */
+        duplicate.resetsAt = window.resetsAt;
+      }
     }
 
     const limited =

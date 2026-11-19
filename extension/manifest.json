@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Usage Detector — AI Limits",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Your AI usage limits at a glance — Claude, ChatGPT, Gemini, Copilot, Perplexity, Sider, Monica, Merlin and more. Reads only the sites you are signed in to.",
   "minimum_chrome_version": "102",
   "permissions": [
