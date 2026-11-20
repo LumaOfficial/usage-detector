@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Usage Detector — Settings</title>
+<link rel="stylesheet" href="options.css">
+</head>
+<body>
+<main class="panel">
+  <header class="head">
+    <span class="logo" aria-hidden="true"><i></i><i></i></span>
+    <div class="head-text">
+      <h1>Settings</h1>
+      <p>Usage Detector — every AI you use</p>
+    </div>
+    <span class="saved" id="saved" aria-live="polite"></span>
+  </header>
+
+  <p class="banner" id="banner" hidden></p>
+
+  <h2 class="group-title">Alerts &amp; quiet hours</h2>
+  <form class="rows" id="alerts" autocomplete="off">
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="alertThreshold">Low-usage alerts</label>
+        <span class="row-hint">Send a desktop notification when a limit drops below this much left.</span>
+      </div>
+      <div class="control">
+        <input id="alertThreshold" name="alertThreshold" type="range" min="1" max="50" step="1">
+        <output id="alertThresholdValue" for="alertThreshold">15% left</output>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="notifications">Desktop notifications</label>
+        <span class="row-hint">Off keeps the panel and the badge, but never pops a notification.</span>
+      </div>
+      <div class="control">
+        <input id="notifications" name="notifications" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="silentNotificationsRow">
+      <div class="row-text">
+        <label class="row-title" for="silentNotifications">Silent notifications</label>
+        <span class="row-hint">Show the alert without the system sound.</span>
+      </div>
+      <div class="control">
+        <input id="silentNotifications" name="silentNotifications" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="alertRepeatRow">
+      <div class="row-text">
+        <label class="row-title" for="alertRepeatMinutes">Repeat the reminder</label>
+        <span class="row-hint">Once is enough, or remind yourself again while the limit stays low.</span>
+      </div>
+      <div class="control">
+        <select id="alertRepeatMinutes" name="alertRepeatMinutes">
+          <option value="0">Once per drop</option>
+          <option value="15">Every 15 minutes</option>
+          <option value="30">Every 30 minutes</option>
+          <option value="60">Every hour</option>
+          <option value="120">Every 2 hours</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="notifyOnReset">Notify when a limit resets</label>
+        <span class="row-hint">A quiet ping when a used-up limit refills.</span>
+      </div>
+      <div class="control">
+        <input id="notifyOnReset" name="notifyOnReset" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="quietHours">Quiet hours</label>
+        <span class="row-hint">Hold notifications during this window; the panel and the badge keep counting.</span>
+      </div>
+      <div class="control">
+        <input id="quietHours" name="quietHours" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="quietStartRow">
+      <div class="row-text">
+        <label class="row-title" for="quietStart">Quiet hours start</label>
+        <span class="row-hint">When notifications pause.</span>
+      </div>
+      <div class="control">
+        <select id="quietStart" name="quietStart"></select>
+      </div>
+    </div>
+
+    <div class="row" id="quietEndRow">
+      <div class="row-text">
+        <label class="row-title" for="quietEnd">Quiet hours end</label>
+        <span class="row-hint">When they start again. A window can wrap past midnight.</span>
+      </div>
+      <div class="control">
+        <select id="quietEnd" name="quietEnd"></select>
+      </div>
+    </div>
+  </form>
+
+  <h2 class="group-title">Refresh &amp; background</h2>
+  <form class="rows" id="refresh" autocomplete="off">
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="refreshMinutes">Refresh interval</label>
+        <span class="row-hint">How often the extension checks your sites, tab open or not.</span>
+      </div>
+      <div class="control">
+        <select id="refreshMinutes" name="refreshMinutes">
+          <option value="1">Every minute</option>
+          <option value="2">Every 2 minutes</option>
+          <option value="5">Every 5 minutes</option>
+          <option value="10">Every 10 minutes</option>
+          <option value="15">Every 15 minutes</option>
+          <option value="30">Every 30 minutes</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="backgroundPolling">Background checks</label>
+        <span class="row-hint">Read the sites on a timer even when no tab is open. Off only reads when you ask.</span>
+      </div>
+      <div class="control">
+        <input id="backgroundPolling" name="backgroundPolling" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="refreshOnFocus">Refresh when a tab wakes</label>
+        <span class="row-hint">Read the site again the moment you switch back to its tab.</span>
+      </div>
+      <div class="control">
+        <input id="refreshOnFocus" name="refreshOnFocus" class="switch" type="checkbox">
+      </div>
+    </div>
+  </form>
+
+  <h2 class="group-title">History &amp; data</h2>
+  <form class="rows" id="history" autocomplete="off">
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="recordHistory">Keep history</label>
+        <span class="row-hint">Store the trend points the sparkline is drawn from.</span>
+      </div>
+      <div class="control">
+        <input id="recordHistory" name="recordHistory" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="historyDaysRow">
+      <div class="row-text">
+        <label class="row-title" for="historyDays">History length</label>
+        <span class="row-hint">How far back the trend goes before old points are pruned.</span>
+      </div>
+      <div class="control">
+        <select id="historyDays" name="historyDays">
+          <option value="3">3 days</option>
+          <option value="7">7 days</option>
+          <option value="14">14 days</option>
+          <option value="30">30 days</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row" id="showHistoryRow">
+      <div class="row-text">
+        <label class="row-title" for="showHistory">Trend sparkline</label>
+        <span class="row-hint">Draw the sparkline of your tightest limit in each site's details.</span>
+      </div>
+      <div class="control">
+        <input id="showHistory" name="showHistory" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <span class="row-title">Your data</span>
+        <span class="row-hint">Export everything stored, clear the trend history, or put every setting back to its default.</span>
+      </div>
+      <div class="control actions">
+        <button type="button" class="action" id="exportData">Export</button>
+        <button type="button" class="action" id="clearHistory">Clear history</button>
+        <button type="button" class="action" id="resetSettings">Reset settings</button>
+      </div>
+    </div>
+  </form>
+
+  <h2 class="group-title">Panel &amp; widget</h2>
+  <form class="rows" id="panel" autocomplete="off">
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="theme">Panel theme</label>
+        <span class="row-hint">How the popup, this page and the on-page widget look.</span>
+      </div>
+      <div class="control">
+        <select id="theme" name="theme">
+          <option value="auto">Match system</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row" id="badgeModeRow">
+      <div class="row-text">
+        <label class="row-title" for="badgeMode">Toolbar badge</label>
+        <span class="row-hint">Which limit the number on the toolbar icon follows.</span>
+      </div>
+      <div class="control">
+        <select id="badgeMode" name="badgeMode"></select>
+      </div>
+    </div>
+
+    <div class="row" id="badgeStyleRow">
+      <div class="row-text">
+        <label class="row-title" for="badgeStyle">Badge style</label>
+        <span class="row-hint">A percentage, a coloured dot, or nothing at all.</span>
+      </div>
+      <div class="control">
+        <select id="badgeStyle" name="badgeStyle">
+          <option value="percent">Percentage</option>
+          <option value="dot">Coloured dot</option>
+          <option value="off">Hidden</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="hideIdleSites">Only sites with numbers</label>
+        <span class="row-hint">Hide the sites that have nothing to report yet; they stay one click away.</span>
+      </div>
+      <div class="control">
+        <input id="hideIdleSites" name="hideIdleSites" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-text">
+        <label class="row-title" for="overlayEnabled">Widget on the AI sites</label>
+        <span class="row-hint">Draw a small usage widget in the corner of the sites themselves.</span>
+      </div>
+      <div class="control">
+        <input id="overlayEnabled" name="overlayEnabled" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="overlayPositionRow">
+      <div class="row-text">
+        <label class="row-title" for="overlayPosition">Widget corner</label>
+        <span class="row-hint">Where the widget sits on the page.</span>
+      </div>
+      <div class="control">
+        <select id="overlayPosition" name="overlayPosition">
+          <option value="bottom-right">Bottom right</option>
+          <option value="bottom-left">Bottom left</option>
+          <option value="top-right">Top right</option>
+          <option value="top-left">Top left</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row" id="overlayCompactRow">
+      <div class="row-text">
+        <label class="row-title" for="overlayCompact">Start the widget collapsed</label>
+        <span class="row-hint">Show only the percentage until you click it open.</span>
+      </div>
+      <div class="control">
+        <input id="overlayCompact" name="overlayCompact" class="switch" type="checkbox">
+      </div>
+    </div>
+
+    <div class="row" id="overlayRowsRow">
+      <div class="row-text">
+        <label class="row-title" for="overlayRows">Widget rows</label>
+        <span class="row-hint">How many of your tightest limits the open widget lists.</span>
+      </div>
+      <div class="control">
+        <select id="overlayRows" name="overlayRows">
+          <option value="1">1 row</option>
+          <option value="2">2 rows</option>
+          <option value="3">3 rows</option>
+          <option value="4">4 rows</option>
+          <option value="5">5 rows</option>
+          <option value="6">6 rows</option>
+        </select>
+      </div>
+    </div>
+  </form>
+
+  <h2 class="group-title">Sites to track</h2>
+  <p class="group-hint">The panel, the badge and the on-page widget only count the sites you keep on.</p>
+  <div class="sites" id="sites"></div>
+
+  <p class="foot">Settings are stored in your browser. The extension sends nothing anywhere.</p>
+</main>
+
+<script src="../sites.js"></script>
+<script src="../settings.js"></script>
+<script src="options.js"></script>
+</body>
+</html>
