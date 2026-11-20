@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Usage Detector — preview</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f6f8;
+        --card: #ffffff;
+        --ink: #14171d;
+        --muted: #667085;
+        --line: #e4e7ec;
+        --accent: #2563eb;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 32px 20px 48px;
+        background: var(--bg);
+        color: var(--ink);
+        font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      .wrap { max-width: 980px; margin: 0 auto; }
+      header { margin-bottom: 24px; }
+      h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -0.02em; }
+      .sub { margin: 0; color: var(--muted); font-size: 14px; }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: rgba(37, 99, 235, 0.1);
+        border: 1px solid rgba(37, 99, 235, 0.25);
+        border-radius: 999px;
+        padding: 2px 8px;
+        margin-bottom: 10px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (min-width: 780px) {
+        .grid { grid-template-columns: 320px 1fr; }
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+      }
+      .card h2 {
+        margin: 0;
+        padding: 12px 16px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+      }
+      .card iframe { display: block; width: 100%; border: 0; background: #fff; }
+      #popup-frame { height: 300px; }
+      #options-frame { height: 260px; }
+      .manifest { margin-top: 20px; }
+      .rows { padding: 6px 16px 14px; }
+      .row {
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        font-size: 13px;
+        padding: 6px 0;
+        border-bottom: 1px dashed var(--line);
+      }
+      .row:last-child { border-bottom: 0; }
+      .row span:first-child { color: var(--muted); }
+      .row code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+      }
+      .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 16px; }
+      .chip {
+        font-size: 12px;
+        background: #eef2f7;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 2px 7px;
+      }
+      .note { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+      .note a { color: var(--accent); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <span class="tag">Manifest V3</span>
+        <h1>Usage Detector</h1>
+        <p class="sub">The extension's panel and its settings page, rendered from the source files.</p>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Panel</h2>
+          <iframe id="popup-frame" title="Extension panel"></iframe>
+        </section>
+        <section class="card">
+          <h2>Settings</h2>
+          <iframe id="options-frame" title="Extension settings"></iframe>
+        </section>
+      </div>
+
+      <section class="card manifest">
+        <h2>Manifest</h2>
+        <div class="rows" id="manifest-rows"></div>
+        <div class="chips" id="manifest-chips"></div>
+      </section>
+
+      <p class="note">
+        Preview only — the pages run with a storage stand-in and sample data, so no browsing
+        history is read. Load the folder unpacked in Chrome to use the real extension.
+      </p>
+    </div>
+
+    <script src="/preview/preview.js"></script>
+  </body>
+</html>
