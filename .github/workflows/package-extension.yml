@@ -1,0 +1,38 @@
+name: Package extension
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (for example v2.3.1)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      # manifest.json has to sit at the root of the archive, so zip the
+      # contents of extension/ rather than the folder itself.
+      - name: Zip the extension folder
+        run: |
+          cd extension
+          zip -r ../usage-detector.zip . -x '*.DS_Store' -x '__MACOSX/*'
+
+      - name: Create or update the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ inputs.tag || github.ref_name }}"
+          gh release create "$tag" usage-detector.zip \
+            --title "Usage Detector $tag" \
+            --generate-notes \
+          || gh release upload "$tag" usage-detector.zip --clobber

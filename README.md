@@ -88,14 +88,34 @@ Settings live in `chrome.storage.local` under `settings`.
 
 ## Install
 
-1. Keep the `extension/` folder from this repository on your machine.
+The extension is not on the Chrome Web Store yet, so it installs as an unpacked
+folder. There is no build step and nothing else from this repository is needed —
+only the extension files themselves.
+
+**Download the release ZIP**
+
+1. Download `usage-detector.zip` from the
+   [latest release](https://github.com/LumaOfficial/usage-detector/releases/latest)
+   and unzip it. (The workflow below publishes that release; until the first one
+   exists, use the clone steps instead.)
 2. Open your browser's extensions page and enable **Developer mode**:
    - Chrome — `chrome://extensions`
    - Edge — `edge://extensions`
    - Opera — `opera://extensions`
    - Brave — `brave://extensions`
-3. Click **Load unpacked** and select the `extension/` folder.
+3. Click **Load unpacked** and select the unzipped folder — the one that has
+   `manifest.json` in it.
 4. Pin **Usage Detector** to the toolbar.
+
+**Or from a clone of this repository**
+
+Same steps, but select the `extension/` folder in step 3 instead of an unzipped
+release. Only that folder is the extension; `preview/`, `tests/` and this README
+are development material and are never loaded by the browser.
+
+Releases are built by `.github/workflows/package-extension.yml`: run **Package
+extension** from the Actions tab with a tag, or push a `v*` tag, and it attaches
+`usage-detector.zip` to that release.
 
 The panel fills in on its own within a minute of install, using the sign-in your
 browser already holds. It refreshes on the interval from the settings page (five
