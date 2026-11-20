@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Usage Detector",
+  "version": "1.0.0",
+  "description": "Detects and tracks how you use the web.",
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "Usage Detector"
+  }
+}
