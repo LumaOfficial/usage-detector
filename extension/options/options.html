@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usage Detector — Settings</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body class="ud-options">
+  <div class="ud-page">
+    <header class="ud-page-head">
+      <div class="ud-brand">
+        <img class="ud-logo-lg" src="../icons/icon48.png" alt="">
+        <div>
+          <h1>Usage Detector</h1>
+          <p>Manifest V3 · everything runs and stays inside the extension</p>
+        </div>
+      </div>
+      <span class="ud-chip-static" id="versionChip">v1.0.0</span>
+    </header>
+
+    <section class="ud-card">
+      <h2>Tracking</h2>
+      <div class="ud-row">
+        <div>
+          <p class="ud-row-title">Record active tab time</p>
+          <p class="ud-row-desc">Time is counted only for the tab you are actually looking at.</p>
+        </div>
+        <label class="ud-switch">
+          <input type="checkbox" id="trackingToggle">
+          <span class="ud-switch-track"></span>
+        </label>
+      </div>
+      <div class="ud-row">
+        <div>
+          <p class="ud-row-title">Idle detection</p>
+          <p class="ud-row-desc">Stop counting after this long without input.</p>
+        </div>
+        <select id="idleSelect" class="ud-select">
+          <option value="30">30 seconds</option>
+          <option value="60">1 minute</option>
+          <option value="120">2 minutes</option>
+          <option value="300">5 minutes</option>
+        </select>
+      </div>
+      <div class="ud-row">
+        <div>
+          <p class="ud-row-title">Keep history for</p>
+          <p class="ud-row-desc">Older days are deleted automatically.</p>
+        </div>
+        <select id="retentionSelect" class="ud-select">
+          <option value="30">30 days</option>
+          <option value="90">90 days</option>
+          <option value="180">180 days</option>
+          <option value="365">1 year</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="ud-card">
+      <h2>Ignored sites</h2>
+      <p class="ud-row-desc">One domain per line. Subdomains are included.</p>
+      <textarea id="ignoreList" class="ud-textarea" spellcheck="false" rows="5" placeholder="localhost&#10;127.0.0.1"></textarea>
+      <p class="ud-hint" id="ignoreHint">Changes save automatically.</p>
+    </section>
+
+    <section class="ud-card">
+      <h2>Your data</h2>
+      <p class="ud-row-desc" id="storageInfo">Reading storage…</p>
+      <div class="ud-actions">
+        <button type="button" class="ud-btn" id="exportBtn">Export JSON</button>
+        <button type="button" class="ud-btn ud-btn-ghost" id="importBtn">Import JSON</button>
+        <button type="button" class="ud-btn ud-btn-danger" id="resetBtn">Delete all data</button>
+        <input type="file" id="importInput" accept="application/json,.json" hidden>
+      </div>
+    </section>
+
+    <section class="ud-card ud-card-quiet">
+      <h2>How it works</h2>
+      <p class="ud-row-desc">A Manifest V3 service worker watches tab focus and writes totals to <code>chrome.storage.local</code>. The popup and this page talk to it with <code>chrome.runtime</code> messages. No network requests, no remote code, no external server.</p>
+    </section>
+
+    <footer class="ud-page-foot">Usage Detector <span id="footVersion"></span> · packaged entirely inside the extension</footer>
+  </div>
+
+  <dialog class="ud-dialog" id="resetDialog">
+    <h2>Delete all usage data?</h2>
+    <p>This removes every recorded day from this browser. Your settings stay as they are.</p>
+    <div class="ud-dialog-actions">
+      <button type="button" class="ud-btn ud-btn-ghost" id="cancelReset">Cancel</button>
+      <button type="button" class="ud-btn ud-btn-danger" id="confirmReset">Delete data</button>
+    </div>
+  </dialog>
+
+  <div class="ud-toast" id="toast" hidden></div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

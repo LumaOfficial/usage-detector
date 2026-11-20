@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usage Detector — Manifest V3 preview</title>
+  <link rel="stylesheet" href="/preview/preview.css">
+</head>
+<body>
+  <div class="pv-wrap">
+    <header class="pv-header">
+      <div class="pv-brand">
+        <img src="../extension/icons/icon48.png" alt="" class="pv-logo">
+        <div>
+          <h1>Usage Detector</h1>
+          <p>Everything ships inside one Manifest V3 package</p>
+        </div>
+      </div>
+      <span class="pv-badge">Manifest V3</span>
+    </header>
+
+    <div class="pv-banner">
+      <strong>Live preview.</strong>
+      <span>The popup and settings pages below are the real extension files. In Chrome they call the background service worker; here a small local adapter supplies sample data so every control works.</span>
+    </div>
+
+    <div class="pv-grid">
+      <div class="pv-col">
+        <section class="pv-card">
+          <div class="pv-card-head">
+            <h2>Package audit</h2>
+            <span id="auditSummary" class="pv-summary">Running…</span>
+          </div>
+          <ul id="auditList" class="pv-checks"></ul>
+        </section>
+
+        <section class="pv-card">
+          <div class="pv-card-head">
+            <h2>Files in <code>extension/</code></h2>
+            <span id="pkgSize" class="pv-summary"></span>
+          </div>
+          <ul id="fileList" class="pv-files"></ul>
+          <details class="pv-manifest">
+            <summary>manifest.json</summary>
+            <pre id="manifestSource"></pre>
+          </details>
+        </section>
+      </div>
+
+      <div class="pv-col pv-col-frame">
+        <section class="pv-card pv-frame-card">
+          <div class="pv-card-head">
+            <h2>Popup</h2>
+            <a href="../extension/popup/popup.html" target="_blank" rel="noreferrer">Open</a>
+          </div>
+          <iframe id="popupFrame" class="pv-popup-frame" src="../extension/popup/popup.html" title="Extension popup"></iframe>
+        </section>
+      </div>
+    </div>
+
+    <section class="pv-card pv-frame-card" id="settingsCard">
+      <div class="pv-card-head">
+        <h2>Settings page</h2>
+        <a href="../extension/options/options.html" target="_blank" rel="noreferrer">Open</a>
+      </div>
+      <iframe id="optionsFrame" class="pv-options-frame" src="../extension/options/options.html" title="Extension settings"></iframe>
+    </section>
+
+    <footer class="pv-foot">No external server, no remote code, no build step. Load <code>extension/</code> unpacked in Chrome, or zip it with <code>scripts/package-extension.sh</code>.</footer>
+  </div>
+
+  <script type="module" src="/preview/preview.js"></script>
+</body>
+</html>

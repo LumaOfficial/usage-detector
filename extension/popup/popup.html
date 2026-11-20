@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Usage Detector</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body class="ud-popup">
+  <header class="ud-header">
+    <div class="ud-brand">
+      <img class="ud-logo" src="../icons/icon32.png" alt="">
+      <div class="ud-brand-text">
+        <h1>Usage Detector</h1>
+        <p id="dateLabel">Today</p>
+      </div>
+    </div>
+    <span class="ud-status" id="statusPill"><span class="ud-dot"></span><span id="statusText">Tracking</span></span>
+  </header>
+
+  <section class="ud-now" id="nowCard">
+    <div class="ud-now-head">
+      <span class="ud-eyebrow">Current session</span>
+      <span class="ud-clock" id="nowClock">0:00</span>
+    </div>
+    <div class="ud-now-body">
+      <span class="ud-chip" id="nowChip">–</span>
+      <div class="ud-now-meta">
+        <p class="ud-now-domain" id="nowDomain">No active site</p>
+        <p class="ud-now-sub" id="nowSub">Waiting for a tab</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ud-total">
+    <div class="ud-total-main">
+      <span class="ud-eyebrow">Today</span>
+      <p class="ud-total-value" id="totalValue">0m</p>
+      <p class="ud-total-sub" id="totalSub">Nothing tracked yet</p>
+    </div>
+    <div class="ud-week" id="weekBars" aria-hidden="true"></div>
+  </section>
+
+  <section class="ud-sites">
+    <div class="ud-section-head">
+      <h2>Top sites</h2>
+      <span id="siteCount">0 sites</span>
+    </div>
+    <ul class="ud-list" id="siteList"></ul>
+    <p class="ud-empty" id="emptyState" hidden>No usage recorded today. Open a site and it will show up here.</p>
+  </section>
+
+  <footer class="ud-footer">
+    <button type="button" class="ud-btn" id="toggleBtn">Pause tracking</button>
+    <button type="button" class="ud-btn ud-btn-ghost" id="optionsBtn">Settings</button>
+  </footer>
+  <p class="ud-note" id="footNote">Tracked locally on this device. No account, no server.</p>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

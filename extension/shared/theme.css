@@ -1,0 +1,111 @@
+:root {
+  color-scheme: dark;
+  --ud-bg: #0e1014;
+  --ud-panel: #161920;
+  --ud-panel-2: #1c202a;
+  --ud-line: #262b35;
+  --ud-line-soft: #1f242e;
+  --ud-ink: #e9ecf2;
+  --ud-ink-2: #a9b1c0;
+  --ud-ink-3: #7c8698;
+  --ud-accent: #f5b93f;
+  --ud-accent-soft: rgba(245, 185, 63, 0.12);
+  --ud-green: #4ade80;
+  --ud-red: #f87171;
+  --ud-radius: 12px;
+  --ud-radius-sm: 8px;
+  --ud-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ud-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ud-font);
+  background: var(--ud-bg);
+  color: var(--ud-ink);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+.ud-eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ud-ink-3);
+}
+
+.ud-chip {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 9px;
+  background: var(--ud-panel-2);
+  color: #0e1014;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ud-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 9px 14px;
+  background: var(--ud-accent);
+  color: #23190a;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.ud-btn:hover {
+  filter: brightness(1.06);
+}
+
+.ud-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.ud-btn-ghost {
+  background: transparent;
+  color: var(--ud-ink);
+  border-color: var(--ud-line);
+}
+
+.ud-btn-ghost:hover {
+  background: var(--ud-panel-2);
+  filter: none;
+}
+
+.ud-btn-danger {
+  background: transparent;
+  color: var(--ud-red);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.ud-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.1);
+  filter: none;
+}
