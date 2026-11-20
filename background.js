@@ -1,14 +1,26 @@
-// MV3 service worker: accumulates active-tab time per hostname, per day.
+// MV3 service worker: measures time spent in AI tools and stores it per day.
+// The panel turns those seconds into credits (1 credit per minute of use).
+
+const PROVIDERS = {
+  "chatgpt.com": "ChatGPT",
+  "chat.openai.com": "ChatGPT",
+  "claude.ai": "Claude",
+  "gemini.google.com": "Gemini",
+  "copilot.microsoft.com": "Copilot",
+  "perplexity.ai": "Perplexity",
+  "grok.com": "Grok",
+  "poe.com": "Poe",
+};
 
 const STORAGE_KEY = "usage";
 const ENABLED_KEY = "enabled";
 
 let current = { host: null, startedAt: null };
 
-function hostOf(url) {
+function aiHostOf(url) {
   try {
-    const parsed = new URL(url);
-    return parsed.hostname || null;
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    return Object.keys(PROVIDERS).find((domain) => host === domain || host.endsWith(`.${domain}`)) || null;
   } catch {
     return null;
   }
@@ -39,7 +51,7 @@ async function trackActiveTab() {
   if (!(await isEnabled())) return;
 
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-  const host = tab && tab.url ? hostOf(tab.url) : null;
+  const host = tab && tab.url ? aiHostOf(tab.url) : null;
   if (host) current = { host, startedAt: Date.now() };
 }
 
