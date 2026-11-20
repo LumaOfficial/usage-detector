@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Usage Detector — Options</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 480px; margin: 32px auto; padding: 0 16px; }
+      label { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+      button { padding: 6px 12px; }
+      #status { color: #666; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>Usage Detector</h1>
+    <label>
+      <input type="checkbox" id="enabled" />
+      Track usage
+    </label>
+    <button id="clear">Clear recorded usage</button>
+    <p id="status"></p>
+    <script src="options.js"></script>
+  </body>
+</html>
